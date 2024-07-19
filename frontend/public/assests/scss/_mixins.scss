@@ -1,0 +1,15 @@
+@mixin responsive($property, $value) {
+    @media (max-width: $breakpoint-xl) {
+      #{$property}: nth($value, 1);
+    }
+    @media (max-width: $breakpoint-lg) {
+      #{$property}: nth($value, 2);
+    }
+    @media (max-width: $breakpoint-md) {
+      #{$property}: nth($value, 3);
+    }
+    @media (max-width: $breakpoint-sm) {
+      #{$property}: nth($value, 4);
+    }
+  }
+  

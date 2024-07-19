@@ -1,0 +1,122 @@
+.navbar {
+  width: 100%;
+  background: $color-primary-dark2;
+  z-index: 999;
+
+  .navbar-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 5rem;
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: $color-primary-white;
+
+      a{
+        img{
+          width: 200px;
+          height: auto;
+
+        }
+      }
+
+    }
+
+    .links {
+      display: flex;
+      align-items: center;
+      font-weight: 600;
+
+      a {
+        margin: 0 1rem;
+        font-family: $font-secondary;
+        color: $color-primary-white;
+        text-decoration: none;
+
+        &:hover {
+          color: lighten($color-primary-white, 20%);
+        }
+      }
+
+      .button {
+        padding: 0.5rem 1rem;
+        background: $color-primary-gold;
+        border-radius: 5px;
+        color: $color-primary-dark;
+        transition: background 0.3s ease;
+
+        &:hover {
+          background: darken($color-primary-gold, 10%);
+        }
+      }
+
+      .user-menu {
+        position: relative;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        margin-left: 20px;
+
+        .avatar {
+          display: flex;
+          align-items: center;
+          color: $color-primary-white;
+
+          img {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+          }
+
+          span {
+            font-family: 'Courier New', monospace;
+            color: $color-primary-gold;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+          }
+        }
+
+        &:hover .dropdown {
+          display: block;
+        }
+
+        .dropdown {
+          display: none;
+          position: absolute;
+          top: 110%;
+          right: -20%;
+          background: $color-primary-dark2;
+          border-radius: 5px;
+          box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+          overflow: hidden;
+          z-index: 1000;
+          width: 250px;
+
+          a,
+          .logout {
+            display: block;
+            padding: 0.8rem 0;
+            color: $color-primary-white;
+            text-decoration: none;
+            cursor: pointer;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 14px;
+          }
+
+          .logout {
+            padding: 1rem;
+            margin-top: 5px;
+            font-weight: 600;
+            color: red;
+            border-top: 1px solid lighten($color-accent-gray, 20%);
+          }
+        }
+      }
+    }
+  }
+}

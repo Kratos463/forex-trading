@@ -1,0 +1,180 @@
+body,
+html {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: $font-primary;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: $font-secondary;
+    margin-bottom: 1rem;
+}
+
+h1 {
+    font-size: 3rem;
+    color: $color-primary-white;
+    @include responsive(font-size, (2.5rem, 2rem, 1.75rem, 1.5rem));
+    text-align: left;
+}
+
+h2 {
+    font-size: 2.5rem;
+    color: $color-primary-gold;
+    @include responsive(font-size, (2.25rem, 2rem, 1.75rem, 1.5rem));
+}
+
+h3 {
+    font-size: 2rem;
+    color: $color-primary-white;
+    @include responsive(font-size, (1.75rem, 1.5rem, 1.25rem, 1rem));
+}
+
+h4 {
+    font-size: 1.75rem;
+    @include responsive(font-size, (1.5rem, 1.25rem, 1.125rem, 1rem));
+}
+
+h5 {
+    font-size: 1.5rem;
+    @include responsive(font-size, (1.25rem, 1.125rem, 1rem, 0.875rem));
+}
+
+h6 {
+    font-size: 1.25rem;
+    @include responsive(font-size, (1.125rem, 1rem, 0.875rem, 0.75rem));
+}
+
+p {
+    color: $color-accent-gray;
+    font-size: 1rem;
+    font-family: $font-primary;
+    margin-bottom: 1rem;
+    @include responsive(font-size, (0.9375rem, 0.875rem, 0.8125rem, 0.8rem));
+    text-align: left;
+    line-height: 1.6;
+    letter-spacing: 1px;
+}
+
+.gold-text {
+    color: $color-primary-gold;
+}
+
+.subheading {
+    font-size: 1rem;
+    color: transparent;
+    font-family: $font-primary;
+    margin-bottom: 1.5rem;
+    line-height: 1.5rem;
+    letter-spacing: 1px;
+    background: linear-gradient(90deg, $color-accent-gray, darken($color-accent-gray, 10%));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    @include responsive(font-size, (0.95rem, 0.9rem, 0.85rem, 0.8rem));
+}
+
+.section-heading {
+    text-align: center;
+    margin-bottom: 3rem;
+
+    p {
+        color: $color-accent-gray;
+        text-align: center;
+    }
+}
+
+.user-heading {
+    text-align: center;
+    margin-bottom: 3rem;
+
+    h2 {
+        color: $color-primary-white;
+    }
+
+    p {
+        color: $color-primary-gold;
+        text-align: center;
+    }
+}
+
+a {
+    font-family: $font-primary;
+    position: relative;
+    color: $color-accent-gray;
+    text-decoration: none;
+    transition: color 0.3s ease-in-out;
+
+    &:hover {
+        color: darken($color-accent-gray, 10%);
+    }
+
+    &:before {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 80%;
+        height: 1px;
+        background-color: $color-primary-gold;
+        transform: scaleX(0);
+        transform-origin: bottom left;
+        transition: transform 0.3s ease-in-out;
+    }
+
+    &:hover:before {
+        transform: scaleX(1);
+    }
+}
+
+.not-found-text {
+    padding: 1rem;
+    font-size: 1rem;
+    text-align: center;
+    color: $color-accent-gray;
+    @include responsive(font-size, (1rem, 1rem, 0.875rem, 0.75rem))
+}
+
+.welcome-message-container {
+    margin: 2rem 0;
+
+    .welcome-message {
+        color: $color-primary-white;
+        font-family: $font-primary;
+        text-align: left;
+        letter-spacing: 1px;
+        font-size: 1.5rem;
+
+        span {
+            font-size: 2rem;
+            color: $color-primary-gold;
+            font-weight: bold;
+        }
+    }
+
+    .email-verify {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        margin-top: 0px;
+
+        p {
+            color: red;
+            font-weight: 600;
+        }
+
+        button {
+            background: inherit;
+            outline: none;
+            border: none;
+            color: $color-accent-gray;
+            font-family: $font-primary;
+        }
+    }
+}

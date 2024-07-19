@@ -1,0 +1,39 @@
+{
+  "name": "forex-trading-api",
+  "version": "1.0.0",
+  "description": "### Forex Trading API",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon --experimental-modules index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Aeternus Foundation",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.2",
+    "bcryptjs": "^2.4.3",
+    "bip39": "^3.1.0",
+    "body-parser": "^1.20.2",
+    "cloudinary": "^2.2.0",
+    "cookie-parser": "^1.2.0",
+    "cookies": "^0.9.1",
+    "cors": "^2.8.5",
+    "crypto-js": "^4.2.0",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.1",
+    "express": "^4.19.2",
+    "fs": "^0.0.1-security",
+    "geoip-lite": "^1.4.10",
+    "glob": "^11.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "lru-cache": "^11.0.0",
+    "mongoose": "^8.4.4",
+    "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.14",
+    "nodemon": "^3.1.4",
+    "qrcode": "^1.5.3",
+    "rimraf": "^6.0.1",
+    "ua-parser-js": "^1.0.38"
+  }
+}
