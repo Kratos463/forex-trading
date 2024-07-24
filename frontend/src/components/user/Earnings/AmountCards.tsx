@@ -57,7 +57,7 @@ export const ROICard: React.FC<WalletProps> = ({ wallet }) => {
           {index < roiData.length - 1 ? <span> + </span> : <span> = </span>}
         </React.Fragment>
       ))}
-      <Card title="Total Earning" value={`${totalEarning} USDT`} cardType="colored" />
+      <Card title="Total Earning" value={`${totalEarning.toFixed(2)} USDT`} cardType="colored" />
     </div>
   );
 };

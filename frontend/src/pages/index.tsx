@@ -7,6 +7,10 @@ import ServicesComponent from '@/Layout/Home/Services';
 import RegisterComponent from '@/Layout/Home/Register';
 import WhyChooseUs from '@/Layout/Home/WhyChooseUs';
 import Testimonials from '@/Layout/Home/Testimonials';
+import HowToJoin from '@/Layout/Home/HowToJoin';
+import CategoryComponent from '@/Layout/Home/Category';
+import TeamComponent from '@/Layout/Home/Team';
+import CompanyOverview from '@/Layout/Home/CompanyOverview';
 
 const Home = () => {
     const dispatch = useAppDispatch();
@@ -27,16 +31,17 @@ const Home = () => {
 
     return (
         <>
-            <div className="page-content">
-                <Hero />
-                <About />
-                <ServicesComponent />
-            </div>
+
+            <Hero />
+            <CompanyOverview />
+            <About />
+            <ServicesComponent />
+            <HowToJoin />
+            {/* <CategoryComponent /> */}
+            <WhyChooseUs />
+            <Testimonials /> 
             <RegisterComponent />
-            <Testimonials />
-            <div className="page-content">
-                <WhyChooseUs />
-            </div>
+            <TeamComponent />
         </>
     );
 };

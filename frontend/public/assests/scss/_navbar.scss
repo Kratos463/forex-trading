@@ -1,122 +1,169 @@
 .navbar {
   width: 100%;
+  font-family: $font-secondary;
   background: $color-primary-dark2;
   z-index: 999;
+  position: relative;
 
   .navbar-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 5rem;
+    padding: 1.3rem 5rem;
+    position: relative;
 
     .logo {
-      font-size: 1.5rem;
-      font-weight: 500;
-      color: $color-primary-white;
-
-      a{
-        img{
+      a {
+        img {
           width: 200px;
           height: auto;
-
         }
       }
-
     }
 
     .links {
       display: flex;
       align-items: center;
       font-weight: 600;
+      display: none;
+
+      @media (min-width: 850px) {
+        display: flex;
+      }
 
       a {
         margin: 0 1rem;
-        font-family: $font-secondary;
-        color: $color-primary-white;
         text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: $color-primary-white;
+        display: block;
+        line-height: 1;
+        position: relative;
+        z-index: 1;
+        letter-spacing: 1px;
 
         &:hover {
           color: lighten($color-primary-white, 20%);
         }
       }
+    }
 
+    .buttons {
+      display: flex;
+      gap: 15px;
+      display: none;
+
+      @media (min-width: 850px) {
+        display: flex;
+      }
+
+      .button-join,
       .button {
-        padding: 0.5rem 1rem;
-        background: $color-primary-gold;
-        border-radius: 5px;
+        border-radius: 70px;
+        border: 2px solid $color-primary-gold;
+        cursor: pointer;
+        display: inline-block;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: .5px;
+        line-height: 1;
+        padding: .5rem 1.5rem;
+        margin-bottom: 0;
+        text-align: center;
+        text-transform: uppercase;
+        transition: all .4s 0s;
+        vertical-align: middle;
+        white-space: nowrap;
+        background-clip: padding-box;
+        position: relative;
+      }
+
+      .button-join {
+        background-color: $color-primary-gold;
         color: $color-primary-dark;
-        transition: background 0.3s ease;
 
         &:hover {
-          background: darken($color-primary-gold, 10%);
+          background: transparent;
+          color: #fff;
         }
       }
 
-      .user-menu {
-        position: relative;
-        display: flex;
-        align-items: center;
+      a {
+        &:before {
+          content: none;
+        } 
+
+        &:hover:before {
+          transform: none;
+        }
+
+        &:hover {
+          color: darken($color-primary-gold, 10%);
+        }
+      }
+
+      .button {
+        color: #fff;
+        box-shadow: 0 6px 22px rgba(6, 34, 51, .22);
+
+        &:hover {
+          background-color: $color-primary-gold;
+          color: $color-primary-dark;
+        }
+      }
+    }
+
+    .mobile-menu {
+      display: none;
+      @media (max-width: 850px) {
+        display: block;
+        font-size: 24px;
         cursor: pointer;
-        margin-left: 20px;
-
-        .avatar {
-          display: flex;
-          align-items: center;
-          color: $color-primary-white;
-
-          img {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            margin-right: 0.5rem;
-          }
-
-          span {
-            font-family: 'Courier New', monospace;
-            color: $color-primary-gold;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-          }
-        }
-
-        &:hover .dropdown {
-          display: block;
-        }
-
-        .dropdown {
-          display: none;
-          position: absolute;
-          top: 110%;
-          right: -20%;
-          background: $color-primary-dark2;
-          border-radius: 5px;
-          box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-          overflow: hidden;
-          z-index: 1000;
-          width: 250px;
-
-          a,
-          .logout {
-            display: block;
-            padding: 0.8rem 0;
-            color: $color-primary-white;
-            text-decoration: none;
-            cursor: pointer;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 14px;
-          }
-
-          .logout {
-            padding: 1rem;
-            margin-top: 5px;
-            font-weight: 600;
-            color: red;
-            border-top: 1px solid lighten($color-accent-gray, 20%);
-          }
-        }
       }
+    }
+
+    .mobile-nav {
+      display: none;
+      @media (max-width: 850px) {
+        display: block;
+        position: absolute;
+        top: 100%;
+        opacity: 0;
+        left: 0;
+        width: 100%;
+        background: $color-primary-dark2;
+        border-top: 1px solid $color-primary-gold;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        z-index: 999;
+
+        a {
+          display: block;
+          padding: 1rem;
+          color: $color-primary-white;
+          text-decoration: none;
+          font-weight: 600;
+          text-transform: uppercase;
+          font-size: 14px;
+          border-bottom: 1px solid lighten($color-accent-gray, 20%);
+          &:last-child {
+            border-bottom: none;
+          }
+
+          &:hover {
+            background: $color-primary-gold;
+            color: $color-primary-dark;
+          }
+        }
+        
+      }
+    }
+  }
+
+  @media (max-width: 850px) {
+    .navbar-content {
+      padding: 1.3rem 1rem;
     }
   }
 }

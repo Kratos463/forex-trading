@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { login, fetchUser } from "@/Redux/Auth";
 import Cookies from "js-cookie";
+import logo from '../../../public/assests/images/aifx_logo_ver.png';
+import Image from "next/image";
+
 
 const Login = () => {
 
@@ -67,32 +70,27 @@ const Login = () => {
     <Fragment>
       <div className='page-wrapper'>
         <div className='authentication-box'>
-          <div className='left-area'>
-            {/* Left area content (if any) */}
-          </div>
-          <div className='right-area'>
-            <div className='form-container'>
-              <h2>Welcome to AI FXTRADER👋🏻</h2>
-              <p>Please sign-in to your account and start the adventure.</p>
-              <form className='form' style={{ flexDirection: "column" }} onSubmit={handleLoginSubmit}>
-                <div className={`form-group ${errors.identifier ? 'error' : ''}`}>
-                  <input type="text" id="identifier" className='form-control' placeholder=" " value={formData.identifier} onChange={handleInputChange} />
-                  <label htmlFor="identifier">Email or Username</label>
-                  {errors.identifier && <p className="error-message">{errors.identifier}</p>}
-                </div>
-                <div className={`form-group ${errors.password ? 'error' : ''}`}>
-                  <input type="password" id="password" className='form-control' placeholder=" " value={formData.password} onChange={handleInputChange} />
-                  <label htmlFor="password">Password</label>
-                  {errors.password && <p className="error-message">{errors.password}</p>}
-                </div>
-                <Link href="#" className='forgot-password'>Forgot Password?</Link>
-                <div className='button-container'>
-                  <button type="submit" className='button'>{isLoading ? "Processing" : "Login"}</button>
-                </div>
-              </form>
-              <hr className="divider" />
-              <p style={{ textAlign: "center" }}>New on our platform? <Link href="/auth/register">Create an account</Link></p>
-            </div>
+          <div className='form-container'>
+            <Image src={logo} alt="Logo" width={150} height={50} />
+            <p>Please sign-in to your account and start the adventure.</p>
+            <form className='form' style={{ flexDirection: "column" }} onSubmit={handleLoginSubmit}>
+              <div className={`form-group ${errors.identifier ? 'error' : ''}`}>
+                <input type="text" id="identifier" className='form-control' placeholder=" " value={formData.identifier} onChange={handleInputChange} />
+                <label htmlFor="identifier">Email or Username</label>
+                {errors.identifier && <p className="error-message">{errors.identifier}</p>}
+              </div>
+              <div className={`form-group ${errors.password ? 'error' : ''}`}>
+                <input type="password" id="password" className='form-control' placeholder=" " value={formData.password} onChange={handleInputChange} />
+                <label htmlFor="password">Password</label>
+                {errors.password && <p className="error-message">{errors.password}</p>}
+              </div>
+              <Link href="#" className='forgotPassword'>Forgot Password?</Link>
+              <div className='button-container'>
+                <button type="submit" className='button'>{isLoading ? "Processing" : "Login"}</button>
+              </div>
+            </form>
+            <hr className="divider" />
+            <p style={{ textAlign: "center" }}>New on our platform? <Link href="/auth/register">Sign up now</Link></p>
           </div>
         </div>
       </div>

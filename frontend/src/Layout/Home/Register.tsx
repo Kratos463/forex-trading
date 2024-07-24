@@ -8,14 +8,14 @@ const RegisterComponent = () => {
       <Container>
         <div className='register-card'>
             <div className='register-info'>
-              <h2>Join Our Forex Trading MLM Platform</h2>
+              <h2>Join Our AI FXTRADER Platform</h2>
               <p>
-                Unlock financial growth with our secure Forex trading platform and lucrative MLM opportunities.
+                Unlock financial growth with our secure AI FXTRADER trading platform.
               </p>
             </div>
             <div className='register-actions'>
-              <Link href='/auth/register' className='register-button'>Register</Link>
-              <Link href="/auth/login" className='login-button'>Login</Link>
+              <Link href='/auth/register' className='button-full'>Register</Link>
+              <Link href="/auth/login" className='button-full'>Login</Link>
             </div>
         </div>
       </Container>

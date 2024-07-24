@@ -1,6 +1,7 @@
 import SubHeadingComponent from '@/components/common/Heading';
 import React from 'react';
 
+
 const Testimonial = ({ children }: { children: React.ReactNode }) => {
     return <div className="testimonial">{children}</div>;
 };
@@ -44,7 +45,7 @@ const TestimonialAvatar = ({ src, name, title }: { src: string, name: string, ti
 const WithSpeechBubblesTestimonial = () => {
     return (
         <div className="testimonial-section">
-            <div className="container">
+            <div className="page-content">
                 <SubHeadingComponent title='Our Clients Speak' subtitle='We have been working with clients around the world' />
                 <div className="testimonial-content-container">
                     <Testimonial>
