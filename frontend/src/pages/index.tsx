@@ -6,16 +6,13 @@ import About from '@/Layout/Home/About';
 import ServicesComponent from '@/Layout/Home/Services';
 import RegisterComponent from '@/Layout/Home/Register';
 import WhyChooseUs from '@/Layout/Home/WhyChooseUs';
-import Testimonials from '@/Layout/Home/Testimonials';
 import HowToJoin from '@/Layout/Home/HowToJoin';
 import CategoryComponent from '@/Layout/Home/Category';
 import TeamComponent from '@/Layout/Home/Team';
 import CompanyOverview from '@/Layout/Home/CompanyOverview';
-
 const Home = () => {
     const dispatch = useAppDispatch();
 
-    // Memoize the token retrieval
     const token = useMemo(() => {
         if (typeof window !== 'undefined') {
             return localStorage.getItem('token');
@@ -31,15 +28,14 @@ const Home = () => {
 
     return (
         <>
-
             <Hero />
             <CompanyOverview />
             <About />
             <ServicesComponent />
             <HowToJoin />
-            {/* <CategoryComponent /> */}
+            <CategoryComponent />
             <WhyChooseUs />
-            <Testimonials /> 
+            {/* <Testimonials /> */}
             <RegisterComponent />
             <TeamComponent />
         </>

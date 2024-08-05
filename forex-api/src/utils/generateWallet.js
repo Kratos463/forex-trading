@@ -2,21 +2,20 @@ const qrcode = require('qrcode');
 const crypto = require('crypto-js');
 const bip39 = require("bip39");
 const { ethers } = require("ethers");
+require("dotenv").config();
 
-function generatebipWallet(mnemonic, index) {
-  // Generate seed from mnemonic
-  const seed = bip39.mnemonicToSeedSync(mnemonic);
+function generatebipWallet(pw, index) {
+    // Generate seed from mnemonic
 
-  // Create HDNode from seed
-  const hdNode = ethers.HDNodeWallet.fromSeed(seed);
+    const seed = bip39.mnemonicToSeedSync(process.env.MNEMONIC_PHRASE, pw);
 
-  // Derive the wallet at the given index
-  const walletNode = hdNode.derivePath(`m/44'/60'/0'/0/${index}`);
+    // Create the HDNode from the seed
+    const hdNode = ethers.HDNodeWallet.fromSeed(seed);
 
-  // Create wallet instance from derived node
-  const wallet = new ethers.Wallet(walletNode.privateKey);
+    // Derive the wallet at the given index
+    const wallet = hdNode.derivePath(`m/44'/60'/0'/0/${index}`);
 
-  return wallet;
+    return wallet;
 }
 
 

@@ -1,18 +1,21 @@
 const sendVerificationEmail = require("../middleware/sendVerificationCode");
 const User = require("../models/user.model");
-const { isValidEmail, isValidPassword, isValidPhone } = require("../utils/helper");
+const { isValidEmail, isValidPassword } = require("../utils/helper");
 const { serialize } = require("cookie");
 const jwt = require("jsonwebtoken");
 const Wallet = require("../models/wallet.model");
 const WithdrawalRequest = require("../models/withdrawalRequest.model");
-const { generatebipWallet, encryptPrivateKey, generateQRCode } = require("../utils/generateWallet");
+const { generatebipWallet, generateQRCode } = require("../utils/generateWallet");
 const createAccessLog = require("../utils/accessLog");
+const mongoose = require('mongoose');
+const sendEmail = require("../middleware/sendVerificationCode");
+const { generateStrongPassword } = require("../utils/generatePassword");
 
 const registerUser = async (req, res) => {
-    const { email, password, firstName, lastName, phone, referredBy, terms, country } = req.body;
+    const { email, password, firstName, lastName, phone, referredBy, terms, country, ismarketingId } = req.body;
 
-    if ([email, password, firstName, referredBy].some(field => !field?.trim())) {
-        return res.status(400).json({ error: 'Please provide valid information.', success: false });
+    if ([email, password, firstName, country].some(field => !field?.trim())) {
+        return res.status(400).json({ error: 'Please provide valid information for all required fields.', success: false });
     }
 
     try {
@@ -23,20 +26,20 @@ const registerUser = async (req, res) => {
         if (!isValidPassword(password)) {
             return res.status(400).json({ error: 'Invalid password format. Must contain at least one uppercase letter, one lowercase letter, one digit, and be at least 8 characters long.', success: false });
         }
-        
+
         const existingUser = await User.findOne({ email }).lean().exec();
         if (existingUser) {
             return res.status(400).json({ error: 'User with this email already exists.', success: false });
         }
 
-        
-        const referredUser = await User.findOne({ username: referredBy }).lean().exec();
-        if (!referredUser) {
-            return res.status(400).json({ error: 'Invalid referral ID', success: false });
+        let referredUser = null;
+        if (referredBy) {
+            referredUser = await User.findOne({ username: referredBy }).lean().exec();
+            if (!referredUser) {
+                return res.status(400).json({ error: 'Referred user does not exist.', success: false });
+            }
         }
 
-
-        // Generate a unique username
         const generateUniqueUsername = async () => {
             let username;
             let existingUsername;
@@ -44,39 +47,38 @@ const registerUser = async (req, res) => {
                 username = Math.floor(10000000 + Math.random() * 90000000).toString();
                 existingUsername = await User.findOne({ username }).lean().exec();
             } while (existingUsername);
-
             return username;
         };
 
-        // Generate a unique username
         const username = await generateUniqueUsername();
 
-        // Count existing users to determine new index
         const userCount = await User.countDocuments();
 
-        // Generate wallet
-        const wallet = await generatebipWallet(process.env.MNEMONIC_PHRASE, userCount);
+        const pw = await generateStrongPassword()
 
-        // Generate Qr code
+        const wallet = await generatebipWallet(pw, userCount);
+
         const qrCode = await generateQRCode(wallet.address);
 
-        // Save user to database
+        const profileQr = await generateQRCode(username)
+
         const newUser = new User({
             username,
             email,
             password,
             firstName,
             lastName: lastName?.trim() || '',
-            referralId: username.toLowerCase(),
+            referralId: username,
             referredBy: referredUser?._id || null,
             phone: phone?.trim() || '',
             tc: terms,
-            country: country
+            country: country,
+            profileQr: profileQr,
+            ismarketingId: ismarketingId != null ? ismarketingId : false
         });
 
         await newUser.save();
 
-        // Save wallet to database
         const newWallet = new Wallet({
             user: newUser._id,
             walletAddress: wallet.address,
@@ -152,11 +154,59 @@ const loginUser = async (req, res) => {
         console.error('Error during login:', error);
         res.status(500).json({ error: 'Internal server error', success: false });
     }
-}
+};
 
 const fetchCurrentUser = async (req, res) => {
     return res.status(200).json({ sucsess: true, message: "User details fetched Successfully", user: req.user })
-}
+};
+
+const sendVerificationLink = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found', success: false });
+        }
+
+        await sendVerificationEmail(user);
+        return res.status(200).json({ message: 'Verification email sent successfully', success: true });
+    } catch (error) {
+        console.error('Error sending verification link:', error);
+        return res.status(500).json({ error: 'Internal server error', success: false });
+    }
+};
+
+const verifyToken = async (req, res) => {
+    const { token } = req.params;
+
+    try {
+        // Find the user with the provided token
+        const user = await User.findOne({
+            otp: token
+        });
+
+        if (!user) {
+            return res.status(400).json({ error: 'Invalid token', success: false });
+        }
+
+        // Check if the token is expired
+        if (user.otpExpiry < Date.now()) {
+            // Token is expired; send a new verification email
+            await sendVerificationEmail(user);
+            return res.status(400).json({ error: 'Token expired. A new verification email has been sent.', success: false });
+        }
+
+        // Token is valid
+        user.isEmailVerified = true; // Mark user as verified
+        user.otp = undefined; // Clear the token
+        user.otpExpiry = undefined; // Clear the expiry
+        await user.save();
+
+        return res.status(200).json({ message: 'Email verified successfully', success: true });
+    } catch (error) {
+        console.error('Error verifying token:', error);
+        return res.status(500).json({ error: 'Internal server error', success: false });
+    }
+};
 
 const updateUserDetails = async (req, res) => {
     const { username, firstName, lastName, email, phone } = req.body;
@@ -217,54 +267,78 @@ const changePassword = async (req, res) => {
         console.error('Error while changing user password:', error);
         res.status(500).json({ error: 'Internal server error', success: false });
     }
-}
+};
 
-// find the direct referrals and chain up to 15 level
 const directReferrals = async (req, res) => {
     try {
-        const userId = req.user._id;
+        const userId = new mongoose.Types.ObjectId(req.user._id);
         const page = parseInt(req.query.page) || 1; // Current page, default to 1
         const limit = parseInt(req.query.limit) || 10; // Items per page, default to 10
 
-        // Fetch direct referrals of the current user
-        const directReferrals = await User.find({ referredBy: userId })
-            .select("username createdAt")
-            .skip((page - 1) * limit)
-            .limit(limit);
+        // Fetch direct referrals of the current user with totalInvestment
+        const directReferrals = await User.aggregate([
+            { $match: { referredBy: userId } },
+            {
+                $lookup: {
+                    from: 'wallets',
+                    localField: '_id',
+                    foreignField: 'user',
+                    as: 'wallet'
+                }
+            },
+            { $unwind: '$wallet' },
+            {
+                $project: {
+                    username: 1,
+                    createdAt: 1,
+                    totalInvestment: '$wallet.totalInvestment'
+                }
+            },
+            { $skip: (page - 1) * limit },
+            { $limit: limit }
+        ]);
 
-        // Function to recursively find referral chain with firstName and email up to 15 levels deep
-        const findReferralChain = async (userIds, chain = [], level = 1, maxUsers = 1000) => {
-            if (level > 15 || chain.length >= maxUsers) return chain;
+        // Function to recursively find referral chain up to 15 levels deep
+        const findReferralChain = async (userIds, chain = [], level = 1) => {
+            if (level > 15 || userIds.length === 0) return chain;
 
-            const referrals = await User.find({ referredBy: { $in: userIds } })
-                .select('username createdAt referredBy');
-
-            if (referrals.length === 0) return chain;
+            const referrals = await User.aggregate([
+                { $match: { referredBy: { $in: userIds } } },
+                {
+                    $lookup: {
+                        from: 'wallets',
+                        localField: '_id',
+                        foreignField: 'user',
+                        as: 'wallet'
+                    }
+                },
+                { $unwind: '$wallet' },
+                {
+                    $project: {
+                        username: 1,
+                        createdAt: 1,
+                        referredBy: 1,
+                        'wallet.totalInvestment': 1
+                    }
+                }
+            ]);
 
             referrals.forEach(referral => {
                 chain.push({
                     level,
-                    firstName: referral.firstName,
-                    email: referral.email,
+                    username: referral.username,
                     createdAt: referral.createdAt,
-                    referredBy: referral.referredBy
+                    referredBy: referral.referredBy,
+                    totalInvestment: referral.wallet.totalInvestment
                 });
             });
 
-            if (chain.length >= maxUsers) return chain;
-
             const nextLevelUserIds = referrals.map(referral => referral._id);
-            return await findReferralChain(nextLevelUserIds, chain, level + 1, maxUsers);
+            return findReferralChain(nextLevelUserIds, chain, level + 1);
         };
 
-        // Fetch the user who referred the current user
-        const referringUser = await User.findById(userId).select('referredBy');
-        let referralChain = [];
-
-        if (referringUser && referringUser.referredBy) {
-            // Get referral chain up to 15 levels deep for the referring user
-            referralChain = await findReferralChain([referringUser.referredBy], referralChain, 2);
-        }
+        // Fetch the referral chain up to 15 levels deep
+        const referralChain = await findReferralChain([userId], [], 1);
 
         // Apply pagination to the referral chain
         const paginatedChain = referralChain.slice((page - 1) * limit, page * limit);
@@ -288,8 +362,7 @@ const directReferrals = async (req, res) => {
         console.error('Error fetching referrals:', error);
         res.status(500).json({ error: 'Internal server error', success: false });
     }
-}
-
+};
 
 const withdrawalRequest = async (req, res) => {
     const { walletAddress, amount } = req.body;
@@ -310,19 +383,92 @@ const withdrawalRequest = async (req, res) => {
             return res.status(400).json({ error: 'Insufficient balance.', success: false });
         }
 
-        const withdrawalRequest = new WithdrawalRequest({
+        // Check if the user has sent a withdrawal request in the last week
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+        const lastWithdrawalRequest = await WithdrawalRequest.findOne({
             user: userId,
-            amount: amount,
-            requestDate: new Date(), // Use new Date() for current date
-            walletAddress: walletAddress,
-            status: "pending"
+            requestDate: { $gte: oneWeekAgo }
         });
 
-        await withdrawalRequest.save();
+        if (lastWithdrawalRequest) {
+            return res.status(400).json({ error: 'You can only request a withdrawal once per week.', success: false });
+        }
 
-        res.status(200).json({ message: 'Withdrawal request created successfully.', success: true });
+        // Generate a four-digit code
+        const code = Math.floor(1000 + Math.random() * 9000);
+
+        const newWithdrawalRequest = new WithdrawalRequest({
+            user: userId,
+            amount: amount,
+            walletAddress: walletAddress,
+            status: 'pending',
+            code: code
+        });
+
+        await newWithdrawalRequest.save();
+
+        // Send email with the verification code
+        const emailContent = `
+            <p>Your withdrawal request has been created. Please use the following code to verify your request:</p>
+            <p><strong>${code}</strong></p>
+        `;
+
+        await sendEmail({
+            user: req.user,
+            subject: 'Withdrawal Verification Code',
+            htmlContent: emailContent
+        });
+
+        res.status(200).json({ message: 'Withdrawal request created successfully. A verification code has been sent to your email.', success: true });
     } catch (error) {
         console.error('Error during withdrawal request:', error);
+        res.status(500).json({ error: 'Internal server error', success: false });
+    }
+};
+
+const verifyCode = async (req, res) => {
+    const { requestId, code } = req.body;
+
+    if (!requestId || !code) {
+        return res.status(400).json({ error: 'Request ID and code are required.', success: false });
+    }
+
+    try {
+        const withdrawalRequest = await WithdrawalRequest.findById(requestId);
+
+        if (!withdrawalRequest) {
+            return res.status(400).json({ error: 'Withdrawal request not found.', success: false });
+        }
+
+        if (withdrawalRequest.code !== parseInt(code, 10)) {
+            return res.status(400).json({ error: 'Invalid verification code.', success: false });
+        }
+
+        withdrawalRequest.status = 'processing';
+        withdrawalRequest.code = null;
+        withdrawalRequest.processedDate = new Date();
+        await withdrawalRequest.save();
+
+        res.status(200).json({ message: 'Withdrawal request verified and is now processing.', success: true });
+    } catch (error) {
+        console.error('Error during code verification:', error);
+        res.status(500).json({ error: 'Internal server error', success: false });
+    }
+};
+
+const fetchWithdrawalRequests = async (req, res) => {
+    try {
+        const withdrawalRequests = await WithdrawalRequest.find({ user: req.user._id }).select('-code -createdAt -user')
+        if (!withdrawalRequests) {
+            return res.status(400).json({ error: "No withdrawal request found", success: false })
+        }
+
+        return res.status(200).json({ message: "Withdrawal requested fetched successfully", success: true, withdrawalRequests })
+
+    } catch (error) {
+        console.error('Error during code verification:', error);
         res.status(500).json({ error: 'Internal server error', success: false });
     }
 };
@@ -335,5 +481,9 @@ module.exports = {
     withdrawalRequest,
     directReferrals,
     updateUserDetails,
-    changePassword
+    changePassword,
+    sendVerificationLink,
+    verifyToken,
+    verifyCode,
+    fetchWithdrawalRequests
 }

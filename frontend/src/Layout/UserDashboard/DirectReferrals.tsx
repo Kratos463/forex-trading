@@ -1,15 +1,16 @@
 import React, { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/Redux/Hooks';
 import { fetchReferrals } from '@/Redux/Auth';
+import { format } from 'date-fns';
 
 interface Referral {
     _id: string;
     username: string;
     createdAt: string;
+    totalInvestment: number
 }
 
 interface DirectReferralsProps {
-    // Define props if needed
 }
 
 const DirectReferrals: React.FC<DirectReferralsProps> = () => {
@@ -17,12 +18,11 @@ const DirectReferrals: React.FC<DirectReferralsProps> = () => {
     const { isLoading, referrals } = useAppSelector((state) => state.auth);
 
     useEffect(() => {
-        // Fetch referrals on component mount
-        dispatch(fetchReferrals({ page: 1, limit: 15 })); // Initial fetch for first page, adjust limit as needed
+        dispatch(fetchReferrals({ page: 1, limit: 15 }));
     }, [dispatch]);
 
     const handlePageChange = (page: number) => {
-        dispatch(fetchReferrals({ page, limit: 15 })); // Fetch referrals for the selected page
+        dispatch(fetchReferrals({ page, limit: 15 })); 
     };
 
     return (
@@ -36,6 +36,7 @@ const DirectReferrals: React.FC<DirectReferralsProps> = () => {
                         <thead>
                             <tr>
                                 <th>Referral ID</th>
+                                <th>Total Investment</th>
                                 <th>Join On</th>
                             </tr>
                         </thead>
@@ -43,7 +44,8 @@ const DirectReferrals: React.FC<DirectReferralsProps> = () => {
                             {referrals.directReferrals.map((referral: Referral, index: number) => (
                                 <tr key={referral._id}>
                                     <td>{referral.username}</td>
-                                    <td>{referral.createdAt}</td>
+                                    <td style={{color: "green", fontWeight: "bold"}}>{referral.totalInvestment} USDT</td>
+                                    <td>{format(new Date(referral.createdAt), "dd MMM yyyy hh:mma")}</td>
                                 </tr>
                             ))}
                         </tbody>

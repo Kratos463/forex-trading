@@ -18,14 +18,12 @@ const Footer = () => {
   return (
     <footer className="footer">
       <div className="footer-wrapper">
-        <div className="footer-column"> 
+        <div className="footer-column">
           <h2 className="footer-heading">© 2024 AIFXTRADER</h2>
+          <h6>Wildforce Fund Management</h6>
           <p className="footer-address">
-            Reg. No: 38021 <br />
-            Premises No. 482, Fourth Floor <br />
-            Building 08 <br />
-            Honda Media City, <br />
-            Mumbai, India
+          56 Hendford Rd, Bournemouth <br />
+          Dorset, United Kingdom - BH10 5AU
           </p>
         </div>
         <div className="footer-social">

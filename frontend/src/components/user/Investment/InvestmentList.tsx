@@ -1,5 +1,6 @@
 import DynamicTable from '@/components/common/DynamicDataTable';
 import React from 'react';
+import { format } from "date-fns";
 
 interface Investment {
     _id: string;
@@ -29,10 +30,14 @@ const InvestmentList: React.FC<InvestmentsProps> = ({ investments }) => {
 
     const data = investments?.map(transaction => ({
         investmentId: transaction._id,
-        investmentDate: new Date(transaction.investmentDate).toLocaleDateString(),
-        endDate: new Date(transaction.endDate).toLocaleDateString(),
-        amount: <span style={{color: "green"}}>{transaction.amount} USDT</span>,
-        status: transaction.status,
+        investmentDate:  format(new Date(transaction.investmentDate), "dd MMM yyyy hh:mm a"),
+        endDate:  format(new Date(transaction.endDate), "dd MMM yyyy hh:mm a"),
+        amount: <span style={{color: "green", fontWeight: "bold"}}>{transaction.amount} USDT</span>,
+        status: (
+            <span style={{ color: transaction.status === 'active' ? 'green' : 'red', fontWeight: 'bold' }}>
+                {transaction.status}
+            </span> 
+        ),      
         totalRewardEarned: transaction.totalRewardEarned,
     }));
 
@@ -41,7 +46,7 @@ const InvestmentList: React.FC<InvestmentsProps> = ({ investments }) => {
             {data?.length > 0 ? (
                 <DynamicTable title="Direct Referral" columns={columns} data={data} />
             ) : (
-                <div>No investments found.</div>
+                <div  className='not-found-text'>No investments found.</div>
             )}
         </div>
     );

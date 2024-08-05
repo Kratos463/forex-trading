@@ -63,8 +63,8 @@ const userSchema = new Schema({
         default: false
     },
     otp: {
-        type: Number,
-        index: true
+        type: String,
+        default: null
     },
     otpExpiry: {
         type: Date,
@@ -82,6 +82,14 @@ const userSchema = new Schema({
     forgotPasswordTokenExpiry: {
         type: Date,
         default: null
+    },
+    ismarketingId: {
+        type: Boolean,
+        default: false,
+    },
+    profileQr: {
+        type: string,
+        required: true
     },
     referralId: { type: String, required: true, unique: true },
     walletId: { type: Schema.Types.ObjectId, ref: 'Wallet' },

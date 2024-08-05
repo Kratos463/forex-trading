@@ -10,7 +10,7 @@ interface RegisterRequest {
     lastName: string;
     referredBy: string;
     phone: string;
-    terms: boolean;
+    terms: boolean;  
 }
 
 interface LoginRequest {
@@ -73,6 +73,10 @@ interface UpdateUserResponse {
 }
 
 interface changePasswordResponse {
+    success: boolean;
+    message: string;
+}
+interface sendVerificationCodeResponse {
     success: boolean;
     message: string;
 }
@@ -175,6 +179,27 @@ export const fetchUser = createAsyncThunk<FetchUserResponse>(
                 return rejectWithValue(error.response.data.message);
             }
             return rejectWithValue("Failed to fetch user details. Please try again.");
+        }
+    }
+);
+
+// Async thunk for current user details
+export const sendVerificationCode = createAsyncThunk<sendVerificationCodeResponse>(
+    "auth/sendVerificationCode",
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await axios.post<sendVerificationCodeResponse>(
+                `${process.env.API_URL}/api/v1/user/send-verification-mail`,
+                {},
+                getConfig()
+            );
+            return response.data;
+        } catch (error: any) {
+            console.error("Error while send verification email:", error);
+            if (error.response && error.response.data && error.response.data.message) {
+                return rejectWithValue(error.response.data.message);
+            }
+            return rejectWithValue("Failed to send email verification mail. Please try again.");
         }
     }
 );
@@ -326,6 +351,18 @@ const authSlice = createSlice({
             .addCase(updateUser.rejected, (state, action) => {
                 state.isLoading = false;
                 state.error = action.error.message ?? "Failed to update user details.";
+            })
+            // Reducers for update user action
+            .addCase(sendVerificationCode.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(sendVerificationCode.fulfilled, (state, action: PayloadAction<sendVerificationCodeResponse>) => {
+                state.isLoading = false;
+            })
+            .addCase(sendVerificationCode.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.error.message ?? "Failed to send mail verification";
             })
             // Reducers for update user action
             .addCase(changePassword.pending, (state) => {

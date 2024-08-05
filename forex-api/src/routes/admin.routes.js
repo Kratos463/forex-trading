@@ -14,7 +14,8 @@ const {
     getAllInvestments,
     getAllWithdrawalReq,
     addAmountInUserWallet,
-    fetchAdmin
+    fetchAdmin,
+    updateUserDetails
 } = require("../controllers/admin.controller")
 const verifySuperAdmin = require("../middleware/verifySuperAdmin")
 const { addOrUpdateSettings, getSettings, updateDirectReferralReturnRate, updateReferralCommissionRates, updateWeeklyReturnRate } = require("../controllers/settings.controller")
@@ -36,6 +37,7 @@ router.route('/admin-list').get(verifySuperAdmin, getAllAdmins)
 
 // users controll routes
 router.route('/get-users').get(verifySuperAdmin, getAllUser)
+router.route('/update-user').patch(verifySuperAdmin, updateUserDetails)
 router.route('/disable-user/:identifier').patch(verifySuperAdmin, disableUser)
 router.route('/enable-user/:identifier').patch(verifySuperAdmin, enableUser)
 

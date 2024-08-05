@@ -1,7 +1,9 @@
 import { useAppDispatch, useAppSelector } from '@/Redux/Hooks';
 import { addFundToWallet, fetchWallet } from '@/Redux/Wallet';
-import React from 'react';
+import React, { useState } from 'react';
 import { toast } from 'react-toastify';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCopy, faCheck } from '@fortawesome/free-solid-svg-icons';
 
 interface Wallet {
   balance: number;
@@ -14,13 +16,17 @@ interface AddFundProps {
 }
 
 const AddFund: React.FC<AddFundProps> = ({ wallet }) => {
+  const [copied, setCopied] = useState(false);
   const dispatch = useAppDispatch();
   const { loading } = useAppSelector((state) => state.wallet);
 
-  const copyWalletAddress = () => {
+  const handleCopy = () => {
     navigator.clipboard.writeText(wallet?.walletAddress);
-    toast.success('Wallet address copied!');
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
+
+
   const handleAddFund = async () => {
     try {
       const resultAction = await dispatch(addFundToWallet());
@@ -36,7 +42,7 @@ const AddFund: React.FC<AddFundProps> = ({ wallet }) => {
     }
   };
 
- 
+
 
   return (
     <div className="add-fund-container">
@@ -44,21 +50,21 @@ const AddFund: React.FC<AddFundProps> = ({ wallet }) => {
         <h6>
           Available Balance: <span>{wallet?.balance?.toFixed(2)} USDT</span>
         </h6>
+
         <div className="add-fund-form">
-          <div className="wallet-section">
-            <div className="wallet-address">
-              <label>Address: {wallet?.walletAddress} </label>
-              <button className="copy-button" onClick={copyWalletAddress}>
-                <i className="fa-solid fa-copy"></i>
-              </button>
-            </div>
+          <div className="link">
+            <span>Address: {wallet?.walletAddress} </span>
+            <button onClick={handleCopy}>
+              <FontAwesomeIcon icon={copied ? faCheck : faCopy} />
+              {copied ? 'Copied' : 'Copy'}
+            </button>
           </div>
           <div className="qr-code-section">
             <div className="qr-code">
               <img src={wallet?.walletQrCode} alt="Wallet QR Code" />
             </div>
           </div>
-          <p style={{ color: "red" }}>Please press the button after 2 minutes <br /> to transfer it to the transfer the amount.</p>
+          <p style={{ color: "red" }}>Please press the button after 60sec <br /> to transfer the amount into main wallet</p>
           <div className="button-section">
             <button className="button-full" onClick={handleAddFund} disabled={loading}>
               {loading ? 'Adding Funds...' : 'I have deposited'}

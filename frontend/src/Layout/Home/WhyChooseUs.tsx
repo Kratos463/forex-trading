@@ -1,60 +1,52 @@
-import SubHeadingComponent from '@/components/common/Heading';
 import React from 'react';
+import SubHeadingComponent from '@/components/common/Heading';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faShieldAlt, faDollarSign, faUsers, faHandHoldingUsd } from '@fortawesome/free-solid-svg-icons';
+import ParticlesComponent from '@/components/common/Particles';
 
 const WhyChooseUs = () => {
   const usps = [
     {
-      title: "Legal Company",
-      description: "Our company conducts absolutely legal activities in the legal field. We are certified to operate investment business, we are legal and safe.",
-      icon: "🔒", // Replace with actual icon component
-    },
-    {
-      title: "High reliability",
-      description: "We are trusted by a huge number of people. We are working hard constantly to improve the level of our security system and minimize possible risks.",
-      icon: "🔒", // Replace with actual icon component
-    },
-    {
-      title: "Anonymity",
-      description: "Ensure secure transactions and data protection with built-in security measures like two-factor authentication.",
-      icon: "🔒", // Replace with actual icon component
+      title: "High Reliability",
+      description: "Our extensive experience in the industry makes us a reliable choice, already trusted by thousands of large capital investors.",
+      icon: faShieldAlt,
     },
     {
       title: "Transparent Returns",
-      description: "Guaranteed weekly returns on investments with clear tracking.",
-      icon: "📈", // Replace with actual icon component
+      description: "At AIFXTRADER, every investor is valued equally, whether they start with $100 or $100,000. Everyone receives the same percentage of returns on their invested funds.",
+      icon: faDollarSign,
     },
     {
-      title: "Referral Program",
-      description: "We are offering a certain level of referral income through our referral program. you can increase your income by simply refer a few people.",
-      icon: "🔒", // Replace with actual icon component
+      title: "More Earning with Referral Program",
+      description: "You can earn even more by referring others to this platform and sharing this fantastic opportunity with them.",
+      icon: faUsers,
     },
     {
-      title: "Quick Withdrawal",
-      description: "Our all retreats are treated spontaneously once requested. There are high maximum limits. The minimum withdrawal amount is only $50.",
-      icon: "🧑", // Replace with actual icon component
-    },
-    {
-      title: "Expert Support",
-      description: "Dedicated customer support for assistance and educational resources for users to learn and grow.",
-      icon: "🧑", // Replace with actual icon component
+      title: "Hassle-Free Withdrawal",
+      description: "The withdrawal process here is straightforward: you'll receive your funds within 7 days of your request. This timeframe is necessary because the funds are actively invested in the market and need to be moved out before releasing withdrawals.",
+      icon: faHandHoldingUsd,
     },
   ];
 
   return (
     <div className="why-choose-us-section">
+      {/* <ParticlesComponent /> */}
       <div className='page-content'>
-        <SubHeadingComponent title='Why Choose Us' subtitle='Unlock the Potential of Secure and Transparent Investing' />
+        <SubHeadingComponent title='Why Choose Us?' subtitle='Reliable, Transparent & Multiple Earning Options' />
         <div className="content">
           {usps.map((usp, index) => (
-            <div key={index} className={`item ${index % 2 === 0 ? 'left' : 'right'}`}>
-              <div className="icon">{usp.icon}</div>
+            <div key={index} className="card">
+              <div className="icon-container">
+                <div className="icon">
+                  <FontAwesomeIcon icon={usp.icon} />
+                </div>
+              </div>
               <div className="text">
-                <h4 className="subtitle">{usp.title}</h4>
+                <h4 className="title">{usp.title}</h4>
                 <p className="description">{usp.description}</p>
               </div>
             </div>
           ))}
-          <div className="timeline"></div>
         </div>
       </div>
     </div>

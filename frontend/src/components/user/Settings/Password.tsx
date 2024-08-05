@@ -65,7 +65,7 @@ const Password = () => {
           </div>
 
 
-          <button type="submit" className='button'>{isLoading ? "Updating" : "Update"}</button>
+          <button type="submit" className='button-full'>{isLoading ? "Updating" : "Update"}</button>
         </form>
       </div>
     </div>

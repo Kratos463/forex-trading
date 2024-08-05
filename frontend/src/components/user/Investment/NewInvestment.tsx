@@ -1,5 +1,6 @@
 import { useAppDispatch } from '@/Redux/Hooks';
 import { fetchInvestments, makeInvestment } from '@/Redux/Investment';
+import { fetchWallet } from '@/Redux/Wallet';
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
 
@@ -40,6 +41,7 @@ const NewInvestment: React.FC<NewInvestmentProps> = ({ wallet }) => {
       if (makeInvestment.fulfilled.match(resultAction)) {
         setAmount(0)
         dispatch(fetchInvestments())
+        dispatch(fetchWallet())
         toast.success("Investment successful!");
       } else {
         toast.error("Failed to make an investment. Please try again.");
@@ -55,7 +57,7 @@ const NewInvestment: React.FC<NewInvestmentProps> = ({ wallet }) => {
         <h6>Available Balance: <span>{wallet?.toFixed(2)} USDT</span></h6>
         <p>Invest a minimum of 100 USDT, or any multiple of 100 USDT, <br /> to grow your portfolio.</p>
         <form className='form-normal' onSubmit={handleSubmit}>
-          <div className='form-group'>
+          <div className='form-group'> 
             <label>Amount</label>
             <input
               name="amount"
@@ -66,8 +68,8 @@ const NewInvestment: React.FC<NewInvestmentProps> = ({ wallet }) => {
               min="0"
             />
           </div>
-          {errorMessage && <p style={{ color: "red" }}>{errorMessage}</p>}
           <button type="submit" className='button-full'>Make Investment</button>
+          {errorMessage && <p style={{ color: "red" }}>{errorMessage}</p>}
         </form>
       </div>
     </div>

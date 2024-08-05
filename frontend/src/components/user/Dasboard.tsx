@@ -2,12 +2,15 @@ import React, { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from "@/Redux/Hooks";
 import WelcomeMessage from '@/Layout/UserDashboard/WelcomeMessage';
 import { fetchWallet } from '@/Redux/Wallet';
-import AmountCards, { MainCard, ROICard } from './Earnings/AmountCards';
+import AmountCards, { MainCard } from './Earnings/AmountCards';
 import PromotionSlider from '@/Layout/UserDashboard/PromotionSlider';
 import DirectReferrals from '@/Layout/UserDashboard/DirectReferrals';
 import SubHeadingComponent from '../common/Heading';
 import { fetchUser } from '@/Redux/Auth';
 import HowToProcess from './HowToProceed';
+import ShimmerEffect from '../common/shimmer';
+import ReferralCommission from '@/Layout/UserDashboard/ROICards';
+import ReferralLink from '@/Layout/UserDashboard/ReferralLink';
 
 const Dashboard: React.FC = () => {
     const dispatch = useAppDispatch();
@@ -33,11 +36,9 @@ const Dashboard: React.FC = () => {
             <div className='page-content'>
                 <PromotionSlider />
                 <WelcomeMessage user={user?.username || "Investor"} isEmailVerified={user?.isEmailVerified} />
+                <ReferralLink code={user?.referralId}/>
                 <MainCard wallet={wallet} />
-                <div style={{ marginTop: "50px" }}>
-                    <h3>Earning Till Now</h3>
-                    <ROICard wallet={wallet} />
-                </div>
+                <ReferralCommission wallet={wallet} loading={loading} error={error} />
                 <HowToProcess />
                 <DirectReferrals />
             </div>

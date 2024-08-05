@@ -1,11 +1,14 @@
 import React, { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/Redux/Hooks';
 import { fetchReferrals } from '@/Redux/Auth';
+import ShimmerEffect from '@/components/common/shimmer';
+import { format } from 'date-fns';
 
 interface Referral {
     _id: string;
     username: string;
     createdAt: string;
+    totalInvestment: number
 }
 
 interface DirectReferralsProps {
@@ -28,14 +31,15 @@ const TeamReferrals: React.FC<DirectReferralsProps> = () => {
     return (
         <div className="direct-referrals">
             {isLoading ? (
-                <p>Loading...</p>
+                <ShimmerEffect />
             ) : referrals ? (
                 <div className="tableContainer">
-                    <h6 style={{ textAlign: 'center' }}>Your Direct Referrals</h6>
+                    <h6 style={{ textAlign: 'center' }}>Your Team Referrals</h6>
                     <table className="table">
                         <thead>
                             <tr>
                                 <th>Referral ID</th>
+                                <th>Total Investment</th>
                                 <th>Join On</th>
                             </tr>
                         </thead>
@@ -43,7 +47,8 @@ const TeamReferrals: React.FC<DirectReferralsProps> = () => {
                             {referrals.directReferrals.map((referral: Referral, index: number) => (
                                 <tr key={referral._id}>
                                     <td>{referral.username}</td>
-                                    <td>{referral.createdAt}</td>
+                                    <td style={{color: "green", fontWeight: "bold"}}>{referral.totalInvestment} USDT</td>
+                                    <td>{format(new Date(referral.createdAt), "dd MMM yyyy hh:mm a")}</td>
                                 </tr>
                             ))}
                         </tbody>

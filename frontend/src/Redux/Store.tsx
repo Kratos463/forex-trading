@@ -4,11 +4,13 @@ import storage from "redux-persist/lib/storage"; // defaults to localStorage for
 import authReducer from "@/Redux/Auth";
 import walletReducer from "@/Redux/Wallet";
 import investmentReducer from "@/Redux/Investment";
+import PromotionReducer from "@/Redux/Promotions"
 
 const rootReducer = combineReducers({
   auth: authReducer,
   wallet: walletReducer,
   investment: investmentReducer,
+  promotion: PromotionReducer,
 });
 
 const persistConfig = {

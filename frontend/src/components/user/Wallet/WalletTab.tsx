@@ -20,7 +20,7 @@ const WalletTabs: React.FC<WalletTabsProps> = ({ wallet, loading, error }) => {
         {
             id: 2,
             title: 'Transactions',
-            content: <WalletTransactions transactions={wallet?.transactions} />
+            content: <WalletTransactions transactions={wallet?.usdtTransactions} />
         },
     ];
 

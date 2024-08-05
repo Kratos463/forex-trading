@@ -15,7 +15,7 @@ const addPromotion = async (req, res) => {
         }
         const coverImageLocalPath = req.files?.coverImage[0]?.path
 
-        if (!coverImageLocalPath) {
+        if (!coverImageLocalPath) { 
             return res.status(400).json({ error: "Cover Image is required", success: false })
         }
 

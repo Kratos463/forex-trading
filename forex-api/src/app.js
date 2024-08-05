@@ -11,7 +11,8 @@ var whitelist = [
     'http://localhost:3000',
     'https://aifxtrader.com',
     'https://admin.aifxtrader.com',
-    'http://api.aifxtrader.com'
+    'http://api.aifxtrader.com',
+    'http://localhost:3001',
 ]
 
 var corsOptions = {
@@ -55,7 +56,7 @@ app.use('/api', apiKeyMiddleware);
 
 app.use('/api/v1/admin', adminRoutes)
 app.use('/api/v1/user', userRoutes)
-
+// app.use('/verify-email', )
 app.use('/subscribe', subscribeRoutes)
 
 module.exports = { app };

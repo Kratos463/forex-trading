@@ -1,32 +1,30 @@
 import React from 'react';
 import DynamicTable from '@/components/common/DynamicDataTable';
+import { format } from "date-fns";
 
-interface Transaction {
+interface USDTTransaction {
     _id: string;
-    type: string;
-    commissionType: string | null;
     amount: number;
-    details: string;
-    transactionDate: string;
+    createdAt: string;
+    transactionHash: string;
 }
 
 interface DirectReferralProps {
-    transactions: Transaction[];
+    transactions: USDTTransaction[];
 }
 
 const WalletTransactions: React.FC<DirectReferralProps> = ({ transactions }) => {
     const columns = [
-        { header: 'Transaction ID', accessor: 'transactionId' },
-        { header: 'Date', accessor: 'date' },
+        { header: 'Transaction Hash', accessor: 'transactionHash' },
         { header: 'Amount', accessor: 'amount', },
+        { header: 'Date', accessor: 'date' },
     ];
 
-    const filteredTransactions = transactions?.filter(transaction => transaction.commissionType === null && transaction.type === "deposit");
 
-    const data = filteredTransactions?.map(transaction => ({
-        transactionId: transaction._id,
-        date: new Date(transaction.transactionDate).toLocaleDateString(),
-        amount: <span style={{color: "green"}}>{transaction.amount} USDT</span>,
+    const data = transactions?.map(transaction => ({
+        transactionHash: transaction.transactionHash,
+        date: format(new Date(transaction.createdAt), "dd MMM yyyy hh:mm a"),
+        amount: <span style={{color: "green", fontWeight: "bold"}}>{transaction.amount} USDT</span>,
     }));
 
     return (  

@@ -21,63 +21,120 @@ const createInvestment = async (req, res) => {
             return res.status(400).json({ error: "No wallet found for the current logged-in user", success: false });
         }
 
+        // Ensure amount is treated as a number
+        const numericAmount = Number(amount);
+
         // Deduct from wallet balance
-        if (wallet.balance < amount) {
+        if (wallet.balance < numericAmount) {
             return res.status(400).json({ error: "Insufficient balance to make investment", success: false });
         }
-        wallet.balance -= amount;
-        wallet.totalInvestment += amount;
+
+        // Ensure wallet fields are treated as numbers
+        wallet.balance = Number(wallet.balance) - numericAmount;
+        wallet.totalInvestment = Number(wallet.totalInvestment) + numericAmount;
         await wallet.save();
 
-        // Calculate investment details
-        const weeklyRewardPercentage = settings.investmentReturnRate.weeklyReturnRate;
-        const totalReward = amount * 2;
-        const weeklyReturn = amount * (weeklyRewardPercentage / 100)
+        try {
+            // Calculate investment details
+            const weeklyRewardPercentage = settings.investmentReturnRate.weeklyReturnRate;
+            const totalReward = numericAmount * 2;
+            const weeklyReturn = numericAmount * (weeklyRewardPercentage / 100);
 
-        // Calculate return start and end dates
-        const returnStartFrom = new Date();
-        returnStartFrom.setDate(returnStartFrom.getDate() + (8 - returnStartFrom.getDay()) % 7); // Start from upcoming Monday
+            // Calculate return start and end dates
+            const returnStartFrom = new Date();
+            const dayOfWeek = returnStartFrom.getDay();
 
-        const totalReturnWeeks = Math.ceil(totalReward / weeklyReturn);
+            // Calculate the next Monday
+            const daysUntilNextMonday = (8 - dayOfWeek) % 7;
+            if (dayOfWeek >= 1 && dayOfWeek <= 3) { // Monday to Wednesday
+                returnStartFrom.setDate(returnStartFrom.getDate() + daysUntilNextMonday);
+            } else { // Thursday to Sunday
+                returnStartFrom.setDate(returnStartFrom.getDate() + daysUntilNextMonday + 7);
+            }
+            returnStartFrom.setHours(0, 0, 0, 0); // Set time to 12 AM
 
-        const endDate = new Date(returnStartFrom);
-        endDate.setDate(returnStartFrom.getDate() + 7 * totalReturnWeeks); // End date after totalReturnWeeks weeks
+            const totalReturnWeeks = Math.ceil(totalReward / weeklyReturn);
+            const endDate = new Date(returnStartFrom);
+            endDate.setDate(returnStartFrom.getDate() + 7 * totalReturnWeeks);
 
-        // Create new investment record
-        const investment = new Investment({
-            user: req.user._id,
-            amount: amount,
-            status: "active",
-            weeklyRewardPercentage: weeklyRewardPercentage,
-            weeklyRewardEarned: weeklyReturn,
-            totalReward: totalReward,
-            isDisabled: false,
-            totalRewardEarned: 0,
-            endDate: endDate,
-            returnStartFrom: returnStartFrom,
-            referralBonusGiven: false,
-        });
+            const investment = new Investment({
+                user: req.user._id,
+                amount: numericAmount,
+                status: "active",
+                weeklyRewardPercentage: weeklyRewardPercentage,
+                weeklyRewardEarned: weeklyReturn,
+                totalReward: totalReward,
+                isDisabled: false,
+                totalRewardEarned: 0,
+                endDate: endDate,
+                returnStartFrom: returnStartFrom,
+                referralBonusGiven: false,
+            });
 
-        // Save investment record
-        await investment.save();
+            // Save investment record
+            await investment.save();
 
-        // Create transaction record
-        const transaction = new Transaction({
-            user: req.user._id,
-            amount: amount,
-            type: "withdrawal",
-            wallet: wallet._id,
-            details: `${amount} USDT withdrawal from wallet to make an investment, investment id ${investment._id}`
-        });
+            // Create transaction record for withdrawal
+            const withdrawalTransaction = new Transaction({
+                user: req.user._id,
+                amount: numericAmount,
+                type: "withdrawal",
+                wallet: wallet._id,
+                details: `${numericAmount} USDT withdrawal from wallet to make an investment, investment id ${investment._id}`
+            });
 
-        await transaction.save();
+            await withdrawalTransaction.save();
 
-        return res.status(200).json({ success: true, message: `Investment of ${amount} USDT created successfully`, investment });
+            if (req.user.referredBy) {
+                const referredUser = await User.findById(req.user.referredBy);
+
+                if (referredUser) {
+                    const activeInvestments = await Investment.find({ user: referredUser._id, status: "active" });
+
+                    if (activeInvestments.length > 0) {
+                        const referredUserWallet = await Wallet.findOne({ user: referredUser._id });
+                        if (referredUserWallet) {
+                            const directReferralBonusRate = settings.directReferralReturnRate;
+                            const directReferralBonus = numericAmount * (directReferralBonusRate / 100);
+
+                            referredUserWallet.directReferral = Number(referredUserWallet.directReferral) + directReferralBonus;
+                            referredUserWallet.balance = Number(referredUserWallet.balance) + directReferralBonus;
+                            await referredUserWallet.save();
+
+                            const directReferralTransaction = new Transaction({
+                                user: referredUser._id,
+                                amount: directReferralBonus,
+                                type: "deposit",
+                                commissionType: "direct_referral",
+                                wallet: referredUserWallet._id,
+                                details: `Direct referral bonus of ${directReferralBonus} USDT for investment ${investment._id}`,
+                            });
+                            await directReferralTransaction.save();
+
+                            // Mark referral bonus as given
+                            investment.referralBonusGiven = true;
+                            await investment.save();
+                        } else {
+                            throw new Error("Referred user wallet not found");
+                        }
+                    }
+                }
+            }
+
+            return res.status(200).json({ success: true, message: `Investment of ${numericAmount} USDT created successfully`, investment });
+        } catch (innerError) {
+            // Roll back the wallet balance in case of any errors
+            wallet.balance = Number(wallet.balance) + numericAmount;
+            wallet.totalInvestment = Number(wallet.totalInvestment) - numericAmount;
+            await wallet.save();
+            throw innerError;
+        }
     } catch (error) {
         console.error('Error creating investment:', error);
         return res.status(500).json({ error: 'Internal server error', success: false });
     }
 }
+
 
 // get the investment of the users
 const getInvestment = async (req, res) => {
@@ -107,7 +164,7 @@ const processInvestments = async () => {
         const investments = await Investment.find({
             status: 'active',
             isDisabled: false,
-            returnStartFrom: { $lte: today },
+            // returnStartFrom: { $lte: today },
             endDate: { $gt: today },
         });
 
@@ -150,49 +207,136 @@ const processInvestments = async () => {
     }
 };
 
-// return the direct referral bonus of the investment
-const processDirectReferralBonuses = async () => {
+// // return the direct referral bonus of the investment
+
+// const processDirectReferralBonuses = async () => {
+//     try {
+//         const settings = await Settings.findOne();
+//         const directReferralBonusRate = settings.directReferralReturnRate;
+
+//         const investments = await Investment.find({
+//             status: "active",
+//             isDisabled: false,
+//             referralBonusGiven: { $ne: true }
+//         });
+
+//         for (let investment of investments) {
+//             const user = await User.findById(investment.user);
+//             if (user.referredBy) {
+//                 const referrerWallet = await Wallet.findOne({ user: user.referredBy });
+
+//                 if (!referrerWallet) {
+//                     console.error(`No wallet found for referrer ${user.referredBy}`);
+//                     continue;
+//                 }
+
+//                 const directReferralBonus = investment.amount * (directReferralBonusRate / 100);
+
+//                 referrerWallet.directReferral += directReferralBonus;
+//                 referrerWallet.balance += directReferralBonus;
+//                 await referrerWallet.save();
+
+//                 // Log the transaction
+//                 const transaction = new Transaction({
+//                     user: user.referredBy,
+//                     amount: directReferralBonus,
+//                     type: "deposit",
+//                     commissionType: "direct_referral",
+//                     wallet: referrerWallet._id,
+//                     details: `Direct referral bonus of ${directReferralBonus} USDT for investment ${investment._id}`,
+//                 });
+//                 await transaction.save();
+
+//                 // Mark referral bonus as given
+//                 investment.referralBonusGiven = true;
+//                 await investment.save();
+//             }
+//         }
+//     } catch (error) {
+//         console.error('Error processing referral bonuses:', error);
+//     }
+// };
+
+
+
+
+// return the team bonus
+
+
+
+const processTeamRoiBonuses = async () => {
     try {
         const settings = await Settings.findOne();
-        const directReferralBonusRate = settings.directReferralReturnRate;
+        const today = new Date();
 
         const investments = await Investment.find({
             status: "active",
             isDisabled: false,
-            referralBonusGiven: { $ne: true }
+            endDate: { $gte: today }
         });
 
         for (let investment of investments) {
             const user = await User.findById(investment.user);
-            if (user.referredBy) {
-                const referrerWallet = await Wallet.findOne({ user: user.referredBy });
+            let currentReferrerId = user.referredBy;
+            let level = 1;
 
-                if (!referrerWallet) {
-                    console.error(`No wallet found for referrer ${user.referredBy}`);
-                    continue;
+            while (currentReferrerId) {
+                const referrer = await User.findById(currentReferrerId);
+                if (!referrer) {
+                    console.error(`No referrer found with id ${currentReferrerId}`);
+                    break;
                 }
 
-                const directReferralBonus = investment.amount * (directReferralBonusRate / 100);
+                // Check if the referrer has any active investments
+                const activeInvestments = await Investment.find({
+                    user: currentReferrerId,
+                    status: "active",
+                    endDate: { $gte: today }
+                });
+                if (activeInvestments.length === 0) {
+                    console.log(`Referrer ${currentReferrerId} has no active investments. Skipping team bonus for this referrer.`);
+                    break;
+                }
 
-                referrerWallet.directReferral += directReferralBonus;
-                referrerWallet.balance += directReferralBonus;
+                // Count direct referrals of the referrer
+                const directReferralsCount = await User.countDocuments({ referredBy: currentReferrerId });
+                if (level > directReferralsCount) {
+                    console.log(`Referrer ${currentReferrerId} has only ${directReferralsCount} direct referrals. Stopping at level ${level}.`);
+                    break;
+                }
+
+                const referrerWallet = await Wallet.findOne({ user: currentReferrerId });
+                if (!referrerWallet) {
+                    console.error(`No wallet found for referrer ${currentReferrerId}`);
+                    break;
+                }
+
+                const referralCommissionRate = settings.referralCommissionRates[`level${level}`] || 0; 
+                const referralBonus = investment.weeklyRewardEarned * (referralCommissionRate / 100);
+
+                referrerWallet.balance += referralBonus;
+                referrerWallet.teamRoi += referralBonus;
                 await referrerWallet.save();
 
                 // Log the transaction
                 const transaction = new Transaction({
-                    user: user.referredBy,
-                    amount: directReferralBonus,
+                    user: currentReferrerId,
+                    amount: referralBonus,
                     type: "deposit",
-                    commissionType: "direct_referral",
+                    commissionType: "team_roi",
                     wallet: referrerWallet._id,
-                    details: `Direct referral bonus of ${directReferralBonus} USDT for investment ${investment._id}`,
+                    details: `Team referral bonus of ${referralBonus} USDT for investment ${investment._id}`,
                 });
                 await transaction.save();
 
-                // Mark referral bonus as given
-                investment.referralBonusGiven = true;
-                await investment.save();
+                // Move to the next level referrer
+                currentReferrerId = referrer.referredBy;
+                level++;
             }
+
+            // Save investment after processing all levels
+            investment.referralBonusProcessed = true; // Assuming you have a field to mark this
+            await investment.save();
         }
     } catch (error) {
         console.error('Error processing referral bonuses:', error);
@@ -200,67 +344,9 @@ const processDirectReferralBonuses = async () => {
 };
 
 
-// return the team bonus
-const processTeamRoiBonuses = async () => {
-    try {
-      const settings = await Settings.findOne();
-      const today = new Date();
-
-      const investments = await Investment.find({
-        status: "active",
-        isDisabled: false,
-        startDate: { $lte: today },
-        endDate: { $gte: today }
-      });
-  
-      for (let investment of investments) {
-        const user = await User.findById(investment.user);
-        let currentReferrerId = user.referredBy;
-        let level = 1;
-  
-        while (currentReferrerId && level <= 15) {
-          const referrer = await User.findById(currentReferrerId);
-          const referrerWallet = await Wallet.findOne({ user: currentReferrerId });
-  
-          if (!referrerWallet) {
-            console.error(`No wallet found for referrer ${currentReferrerId}`);
-            break;
-          }
-  
-          const referralCommissionRate = settings[`level${level}`] || 0; // Get commission rate for the current level
-          const referralBonus = investment.weeklyRewardEarned * (referralCommissionRate / 100);
-  
-          referrerWallet.balance += referralBonus;
-          await referrerWallet.save();
-  
-          // Log the transaction
-          const transaction = new Transaction({
-            user: currentReferrerId,
-            amount: referralBonus,
-            type: "deposit",
-            commissionType: "team_referral",
-            wallet: referrerWallet._id,
-            details: `Team referral bonus of ${referralBonus} USDT for investment ${investment._id}`,
-          });
-          await transaction.save();
-  
-          // Move to the next level referrer
-          currentReferrerId = referrer.referredBy;
-          level++;
-        }
-  
-        await investment.save();
-      }
-    } catch (error) {
-      console.error('Error processing referral bonuses:', error);
-    }
-  };
-  
-
 const runScheduledTasks = async () => {
     try {
         await processInvestments();
-        await processDirectReferralBonuses();
         await processTeamRoiBonuses()
     } catch (error) {
         console.error('Error running scheduled tasks:', error);

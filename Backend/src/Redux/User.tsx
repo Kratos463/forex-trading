@@ -2,6 +2,23 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
 import { getConfig } from "../utils";
 
+interface RegisterRequest {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    referredBy: string;
+    phone: string;
+    terms: boolean;
+    ismarketingId: boolean
+}
+
+interface RegisterResponse {
+    message: string;
+    success: boolean;
+    error: string;
+}
+
 interface User {
     _id: string;
     username: string;
@@ -11,6 +28,8 @@ interface User {
     phone: string;
     isEmailVerified: boolean;
     createdAt: string,
+    isDisabled: boolean,
+    ismarketingId: boolean,
     wallet?: {
         balance: number;
         totalInvestment: number;
@@ -87,12 +106,26 @@ interface WithdrawalRequest {
     userDetails: User;
 }
 
+interface UpdateUserRequest{
+    username: string,
+    firstName: string,
+    lastName: string,
+    email: string,
+    phone: string,
+    ismarketingId: boolean,
+}
+
 interface UpdateStatusRequest {
     withdrawalId: string,
     status: string;
 }
 
 interface UpdateStatusResponse {
+    message: string;
+    status: boolean
+}
+
+interface UpdateUserResponse {
     message: string;
     status: boolean
 }
@@ -161,6 +194,27 @@ const initialState: UserState = {
     status: 'idle',
 };
 
+// Async thunk for registering
+export const register = createAsyncThunk<RegisterResponse, RegisterRequest>(
+    "auth/register",
+    async (formData, { rejectWithValue }) => {
+        try {
+            const response = await axios.post<RegisterResponse>(
+                `${process.env.API_URL}/api/v1/user/register`,
+                formData,
+                getConfig()
+            );
+            return response.data;
+        } catch (error: any) {
+            console.error("Error while registering user:", error);
+            if (error.response && error.response.data && error.response.data.message) {
+                return rejectWithValue(error.response.data.message);
+            }
+            return rejectWithValue("Registration failed. Please try again.");
+        }
+    }
+);
+
 
 export const getUsers = createAsyncThunk<FetchUsersResponse, { page: number, limit: number }>(
     "users/getUsers",
@@ -183,6 +237,31 @@ export const getUsers = createAsyncThunk<FetchUsersResponse, { page: number, lim
         }
     }
 );
+
+export const updateUserDetails = createAsyncThunk<UpdateUserResponse, UpdateUserRequest>(
+    "users/updateUserDetails",
+    async (formData, { rejectWithValue }) => {
+        try {
+            const response = await axios.patch<UpdateUserResponse>(
+                `${process.env.API_URL}/api/v1/admin/update-user`,
+                formData,
+                getConfig()
+            )
+
+            return response.data
+        } catch (error) {
+            console.error("Error while updating user details request:", error);
+            if (axios.isAxiosError(error)) {
+                if (error.response && error.response.data && error.response.data.message) {
+                    return rejectWithValue(error.response.data.message);
+                }
+                return rejectWithValue("Failed to update user details request. Please try again.");
+            }
+            return rejectWithValue("Failed to update user details request. Please try again.");
+        }
+    }
+)
+
 
 
 export const fetchInvestments = createAsyncThunk<FetchInvestmentResponse, { page: number, limit: number }>(
@@ -309,6 +388,18 @@ const userSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
+            // Reducers for register action
+            .addCase(register.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(register.fulfilled, (state, action: PayloadAction<RegisterResponse>) => {
+                state.isLoading = false;
+            })
+            .addCase(register.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.payload as string;
+            })
             .addCase(getUsers.pending, (state) => {
                 state.isLoading = true;
                 state.error = null;
@@ -321,6 +412,20 @@ const userSlice = createSlice({
                 state.status = 'succeeded';
             })
             .addCase(getUsers.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.payload as string;
+                state.status = 'failed';
+            })
+            .addCase(updateUserDetails.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+                state.status = 'loading';
+            })
+            .addCase(updateUserDetails.fulfilled, (state, action: PayloadAction<UpdateUserResponse>) => {
+                state.isLoading = false;
+                state.status = 'succeeded';
+            })
+            .addCase(updateUserDetails.rejected, (state, action) => {
                 state.isLoading = false;
                 state.error = action.payload as string;
                 state.status = 'failed';

@@ -1,12 +1,18 @@
 const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 
-async function sendVerificationEmail(admin) {
-    const otp = Math.floor(100000 + Math.random() * 900000); // Generate a random 6-digit OTP
-    const otpExpiry = Date.now() + 15 * 60 * 1000; // OTP expiry time (15 minutes)
+async function sendEmail({ user, subject, htmlContent }) {
+    // Generate a verification token and set expiry
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const tokenExpiry = Date.now() + 15 * 60 * 1000;
 
-    admin.otp = otp;
-    admin.otpExpiry = otpExpiry;
-    await admin.save();
+    // Update user with OTP and expiry
+    user.otp = verificationToken;
+    user.otpExpiry = tokenExpiry;
+    await user.save();
+
+    // Replace token placeholder in the HTML content
+    const dynamicHtmlContent = htmlContent.replace('{{verificationURL}}', `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`);
 
     try {
         const transporter = nodemailer.createTransport({
@@ -18,19 +24,21 @@ async function sendVerificationEmail(admin) {
                 pass: process.env.GMAIL_PASS
             }
         });
-    
+
         const mailOptions = {
             from: `"Forex Trading" <${process.env.EMAIL_USER}>`,
-            to: admin.email,
-            subject: 'Email Verification',
-            text: `Your verification code is ${otp}. It will expire in 15 minutes.`
+            to: user.email,
+            subject,
+            html: dynamicHtmlContent
         };
-    
+
         await transporter.sendMail(mailOptions);
     } catch (error) {
-        console.error('Error sending verification email:', error);
-        return res.status(401).json({error: 'Failed to send verification email', success: false});
+        console.error('Error sending email:', error);
+        return { error: 'Failed to send email', success: false };
     }
+
+    return { success: true };
 }
 
-module.exports = sendVerificationEmail;
+module.exports = sendEmail;

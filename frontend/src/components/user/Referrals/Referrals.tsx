@@ -7,7 +7,6 @@ import ReferralsTabs from './ReferralsTabs'
 const Referrals = () => {
 
   const dispatch = useAppDispatch();
-    const { loading, wallet, error } = useAppSelector((state) => state.wallet);
 
     useEffect(() => {
         dispatch(fetchWallet());

@@ -1,16 +1,29 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppSelector } from "@/Redux/Hooks";
 import SubHeadingComponent from '../common/Heading';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faLink, faCopy, faCheck } from '@fortawesome/free-solid-svg-icons';
 
 const ReferralCode: React.FC = () => {
   const {user} = useAppSelector((store) => store.auth);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(user ? user.referralId : "");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000); 
+  };
+
 
   return (
     <div className="referral-code-container">
         <SubHeadingComponent title='Your Referral Code' />
       <div className="code-display">
         <p className="code">{user?.referralId}</p>
-        <button className="button-full" onClick={() => navigator.clipboard.writeText(user ? user.referralId : "")}>Copy Code</button>
+        <button onClick={handleCopy} className='button-full'>
+              <FontAwesomeIcon icon={copied ? faCheck : faCopy} />
+              {copied ? 'Copied' : 'Copy'}
+            </button>
       </div>
       <div className="advantages">
         <h3>Advantages of Referring Friends</h3>

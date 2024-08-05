@@ -4,29 +4,28 @@ const USDTWithdrawalTransaction = require("../models/usdtWithdrawalTransaction")
 require("dotenv").config();
 const { ethers } = require("ethers");
 
-const mainWalletPrivateKey = process.env.MAIN_WALLET_PRIVATEKEY;
-const bscProviderUrl = process.env.BSC_PROVIDER_URL;
-const usdtContractAddress = process.env.USDT_CONTRACT_ADDRESS;
-
-// Set up the provider and wallets
-const provider = new ethers.JsonRpcProvider(bscProviderUrl);
-const mainWallet = new ethers.Wallet(mainWalletPrivateKey, provider);
-
-// USDT contract ABI (simplified, you may need to adjust)
-const usdtAbi = [
-    "function transfer(address to, uint256 amount) external returns (bool)",
-    "function balanceOf(address account) external view returns (uint256)",
-];
-
 
 const addAmountInWallet = async (req, res) => {
     try {
-        console.log("Function called");
-
+ 
         const wallet = await Wallet.findOne({ user: req.user._id });
         if (!wallet) {
             return res.status(400).json({ error: "No wallet found for the current logged-in user", success: false });
         }
+
+        const mainWalletPrivateKey = process.env.MAIN_WALLET_PRIVATEKEY;
+        const bscProviderUrl = process.env.BSC_PROVIDER_URL;
+        const usdtContractAddress = process.env.USDT_CONTRACT_ADDRESS;
+
+        // Set up the provider and wallets
+        const provider = new ethers.JsonRpcProvider(bscProviderUrl);
+        const mainWallet = new ethers.Wallet(mainWalletPrivateKey, provider);
+
+        // USDT contract ABI (simplified, you may need to adjust)
+        const usdtAbi = [
+            "function transfer(address to, uint256 amount) external returns (bool)",
+            "function balanceOf(address account) external view returns (uint256)",
+        ];
 
         // geeting user wallet on block chin 
         const userWallet = new ethers.Wallet(wallet.walletPrivateKey, provider);
@@ -76,7 +75,6 @@ const addAmountInWallet = async (req, res) => {
             await wallet.save()
 
         } else {
-            console.log("No Balance found in user wallet! Please try again later.");
             return res.status(400).json({ error: 'No balance in user wallet', success: false });
         }
         return res.status(200).json({ message: `Amount has been successfully added to your wallet`, success: true });
@@ -90,8 +88,10 @@ const addAmountInWallet = async (req, res) => {
 
 const getCurrentUserWalletDetails = async (req, res) => {
     try {
+        const userId = new mongoose.Types.ObjectId(req.user._id);
+
         const walletDetails = await Wallet.aggregate([
-            { $match: { user: new mongoose.Types.ObjectId(req.user._id) } },
+            { $match: { user: userId } },
             {
                 $lookup: {
                     from: 'transactions',
@@ -113,6 +113,24 @@ const getCurrentUserWalletDetails = async (req, res) => {
                 }
             },
             {
+                $lookup: {
+                    from: 'usdtwithdrawaltransactions', // Ensure this matches the collection name for USDT transactions
+                    let: { userId: '$user' },
+                    pipeline: [
+                        { $match: { $expr: { $eq: ['$user', '$$userId'] } } },
+                        {
+                            $project: {
+                                _id: 1,
+                                amount: 1,
+                                transactionHash: 1,
+                                createdAt: 1
+                            }
+                        }
+                    ],
+                    as: 'usdtTransactions'
+                }
+            },
+            {
                 $project: {
                     _id: 1,
                     user: 1,
@@ -124,41 +142,29 @@ const getCurrentUserWalletDetails = async (req, res) => {
                     walletAddress: 1,
                     walletQrCode: 1,
                     transactions: 1,
+                    usdtTransactions: 1,
                     'securitySettings.twoFactorAuthEnabled': 1,
                 }
             }
         ]);
 
-        if (!walletDetails) {
+        if (!walletDetails || walletDetails.length === 0) {
             return res.status(400).json({ error: "No wallet found for the current logged-in user", success: false });
         }
 
-        return res.status(200).json({ success: true, message: "User wallet details fetched successfully", wallet: walletDetails });
+        return res.status(200).json({
+            success: true,
+            message: "User wallet details and transactions fetched successfully",
+            wallet: walletDetails[0]
+        });
     } catch (error) {
         console.error('Error fetching user wallet details:', error);
         return res.status(500).json({ error: 'Internal server error', success: false });
     }
-}
+};
 
-const walletTransactionList = async(req, res)=> {
-    const userId = req.user._id
-    try {
-        const transactions = await USDTWithdrawalTransaction.find({user: userId}).select("createdAt transactionHash user _id amount")
-
-        if(!transactions){
-            return res.status(400).json({error: "No transaction found", success: false})
-        }
-
-        return res.status(200).json({message: "Transactions list", success: true, transactions: transactions})
-
-    } catch (error) {
-        console.error('Error while fetching user transaction list:', error);
-        return res.status(500).json({ error: 'Internal server error', success: false });
-    }
-}
 
 module.exports = {
     addAmountInWallet,
     getCurrentUserWalletDetails,
-    walletTransactionList
 };

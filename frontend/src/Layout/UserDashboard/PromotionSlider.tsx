@@ -1,48 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import img1 from '../../../public/assests/images/car.jpeg';
-import img2 from '../../../public/assests/images/mylasia.jpeg';
-import img3 from '../../../public/assests/images/laptop.jpeg';
+import { useAppDispatch, useAppSelector } from '@/Redux/Hooks';
+import { getPromotions } from '@/Redux/Promotions';
+import ShimmerEffect from '@/components/common/shimmer';
 
-interface Slide {
-  backgroundImage: any;
-  message: string;
-}
-
-const slides: Slide[] = [
-  {
-    backgroundImage: img3,
-    message: 'Make a total investment of 50k and get a chance to win a laptop!',
-  },
-  {
-    backgroundImage: img1,
-    message: 'Make a total investment of 50k and get a chance to win a car!',
-  },
-  {
-    backgroundImage: img2,
-    message: 'Make a total investment of 50k and get a chance to go to Malaysia!',
-  },
-  // Add more slides as needed
-];
 
 const PromotionSlider: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const { promotions, isLoading } = useAppSelector((state) => state.promotion);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % slides.length);
-    }, 5000); // Change slide every 5 seconds
+    dispatch(getPromotions());
+  }, [dispatch]);
 
-    return () => clearInterval(interval);
-  }, []);
+  useEffect(() => {
+    if (promotions.length > 0) {
+      const interval = setInterval(() => {
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % promotions.length);
+      }, 5000); // Change slide every 5 seconds
 
-  const { backgroundImage, message } = slides[currentIndex];
+      return () => clearInterval(interval);
+    }
+  }, [promotions]);
+
+  const currentPromotion = promotions[currentIndex] || { image: { src: '/default.jpg' }, title: 'Default Title' };
+  const { image, title } = currentPromotion;
 
   const goToPrevious = () => {
-    setCurrentIndex((prevIndex) => (prevIndex === 0 ? slides.length - 1 : prevIndex - 1));
+    setCurrentIndex((prevIndex) => (promotions.length > 0 ? (prevIndex === 0 ? promotions.length - 1 : prevIndex - 1) : 0));
   };
 
   const goToNext = () => {
-    setCurrentIndex((prevIndex) => (prevIndex + 1) % slides.length);
+    setCurrentIndex((prevIndex) => (promotions.length > 0 ? (prevIndex + 1) % promotions.length : 0));
   };
 
   const goToSlide = (index: number) => {
@@ -50,28 +39,32 @@ const PromotionSlider: React.FC = () => {
   };
 
   return (
-  <div className='promotion-slider-container'>
-      <div className="promotion-slider" style={{ backgroundImage: `url(${backgroundImage.src})` }}>
-      <div className="promotion-content">
-        <h2>{message}</h2>
-      </div>
-      <div className="arrow left" onClick={goToPrevious}>
-        &#10094;
-      </div>
-      <div className="arrow right" onClick={goToNext}>
-        &#10095;
-      </div>
-      <div className="dots">
-        {slides.map((_, index) => (
-          <span
-            key={index}
-            className={`dot ${currentIndex === index ? 'active' : ''}`}
-            onClick={() => goToSlide(index)}
-          ></span>
-        ))}
-      </div>
+    <div className='promotion-slider-container'>
+      {isLoading ? (
+        <ShimmerEffect />
+      ) : (
+        <div className="promotion-slider" style={{ backgroundImage: `url(${image})` }}>
+          <div className="promotion-content">
+            <h2>{title}</h2>
+          </div>
+          <div className="arrow left" onClick={goToPrevious}>
+            &#10094;
+          </div>
+          <div className="arrow right" onClick={goToNext}>
+            &#10095;
+          </div>
+          <div className="dots">
+            {promotions.map((promotion, index) => (
+              <span
+                key={index}
+                className={`dot ${currentIndex === index ? 'active' : ''}`}
+                onClick={() => goToSlide(index)}
+              ></span>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
-  </div>
   );
 };
 

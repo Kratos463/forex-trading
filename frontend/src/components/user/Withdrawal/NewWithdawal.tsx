@@ -1,4 +1,4 @@
-import { useAppDispatch } from '@/Redux/Hooks';
+import { useAppDispatch, useAppSelector } from '@/Redux/Hooks';
 import { withdrawalRequest } from '@/Redux/Wallet';
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
@@ -9,6 +9,7 @@ interface NewWithdawalProps {
 
 const NewWithdawal: React.FC<NewWithdawalProps> = ({ wallet }) => {
   const dispatch = useAppDispatch();
+  const { error, loading } = useAppSelector((state) => state.wallet);
   const [amount, setAmount] = useState<number>(0);
   const [walletAddress, setWalletAddress] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -30,11 +31,8 @@ const NewWithdawal: React.FC<NewWithdawalProps> = ({ wallet }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (wallet < 100) {
-      setErrorMessage('Insufficient balance. You need at least 100 USDT to withdraw.');
-      return;
-    } else if (amount < 50) {
-      setErrorMessage('Please enter an amount greater than or equal to 50 USDT.');
+    if (amount < 50) {
+      setErrorMessage('Insufficient balance. You need at least 50 USDT to withdraw.');
       return;
     } else if (amount > wallet) {
       setErrorMessage('Entered amount exceeds available balance.');
@@ -53,7 +51,9 @@ const NewWithdawal: React.FC<NewWithdawalProps> = ({ wallet }) => {
         setWalletAddress('');
         toast.success('Withdrawal request successful!');
       } else {
-        toast.error('Failed to make a withdrawal request. Please try again.');
+        setAmount(0);
+        setWalletAddress('');
+        toast.error(resultAction.payload as string || 'Failed to make a withdrawal request. Please try again.');
       }
     } catch (error) {
       toast.error('An error occurred. Please try again.');
@@ -86,8 +86,8 @@ const NewWithdawal: React.FC<NewWithdawalProps> = ({ wallet }) => {
               onChange={handleWalletAddressChange}
             />
           </div>
-          {errorMessage && <p style={{ color: "red" }}>{errorMessage}</p>}
-          <button className='button-full' type="submit">Withdraw</button>
+          <button className='button-full' type="submit">{loading ? "Processing..." : "Send"}</button>
+           {errorMessage && <p style={{ color: "red" }}>{errorMessage}</p>}
         </form>
       </div>
     </div>

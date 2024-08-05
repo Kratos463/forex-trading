@@ -1,5 +1,5 @@
 
 
-const DB_NAME = "forextrading"
+const DB_NAME = "aifxtrader"
 
 module.exports = {DB_NAME}

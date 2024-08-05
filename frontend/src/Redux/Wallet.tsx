@@ -13,6 +13,13 @@ interface Transaction {
     transactionDate: string;
 }
 
+interface USDTTransaction {
+    _id: string;
+    amount: number;
+    createdAt: string;
+    transactionHash: string;
+}
+
 interface Wallet {
     _id: string;
     user: string;
@@ -27,12 +34,29 @@ interface Wallet {
         twoFactorAuthEnabled: boolean;
     };
     transactions: Transaction[];
+    usdtTransactions: USDTTransaction[];
 }
 
 interface WalletResponse {
     success: boolean;
     message: string;
-    wallet: Wallet[];
+    wallet: Wallet;
+}
+
+interface WithdrawalResponse {
+    _id: string;
+    amount: number;
+    walletAddress: string;
+    status: string;
+    approvalDate: string;
+    processedDate: string;
+    requestDate: string;
+}
+
+interface WithDrawalRequestResponse {
+    success: boolean;
+    message: string;
+    withdrawalRequests: WithdrawalResponse[];
 }
 
 interface WithDrawalRequest {
@@ -53,15 +77,19 @@ interface AddFundResponse {
 interface WalletState {
     wallet: Wallet | null;
     loading: boolean;
+    success: boolean;
     error: string | null;
+    withdrawalRequests: WithdrawalResponse[];
+
 }
 
 const initialState: WalletState = {
-    wallet: null,   
+    wallet: null,
     loading: false,
     error: null,
+    success: false,
+    withdrawalRequests: [],
 };
-
 
 export const addFundToWallet = createAsyncThunk<AddFundResponse>(
     'wallet/addFundToWallet',
@@ -92,11 +120,7 @@ export const fetchWallet = createAsyncThunk<Wallet, void, { rejectValue: string 
                 `${process.env.API_URL}/api/v1/user/get-user-wallet`,
                 getConfig()
             );
-            if (response.data.wallet && response.data.wallet.length > 0) {
-                return response.data.wallet[0]; // Assuming there's only one wallet in the array
-            } else {
-                return rejectWithValue("No wallet found.");
-            }
+            return response.data.wallet;
         } catch (error: any) {
             console.error("Error while fetching user wallet:", error);
             if (error.response && error.response.data && error.response.data.message) {
@@ -119,13 +143,59 @@ export const withdrawalRequest = createAsyncThunk<WithDrawalResponse, WithDrawal
             return response.data;
         } catch (error: any) {
             console.error("Error while withdrawal request:", error);
-            if (error.response && error.response.data && error.response.data.message) {
-                return rejectWithValue(error.response.data.message);
+            if (error.response && error.response.data && error.response.data.error) {
+                return rejectWithValue(error.response.data.error);
             }
             return rejectWithValue("Failed to make withdrawal. Please try again.");
         }
     }
 );
+
+
+
+export const fetchWithdrawalRequest = createAsyncThunk<WithDrawalRequestResponse>(
+    'wallet/fetchWithdrawalRequest',
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await axios.get(
+                `${process.env.API_URL}/api/v1/user/withdrawal-request`,
+                getConfig()
+            );
+            return response.data;
+        } catch (error: any) {
+            console.error("Error while fetching withdrawal requests:", error);
+            if (error.response && error.response.data && error.response.data.error) {
+                return rejectWithValue(error.response.data.error);
+            }
+            return rejectWithValue("Failed to fetch withdrawal requests. Please try again.");
+        }
+    }
+);
+
+export const verifyWithdrawalRequest = createAsyncThunk<
+    WithDrawalResponse, 
+    { requestId: string, code: string }, 
+    { rejectValue: string }  
+>(
+    'wallet/verifyWithdrawalRequest',
+    async ({ requestId, code }, { rejectWithValue }) => {
+        try {
+            const response = await axios.post<WithDrawalResponse>(
+                `${process.env.API_URL}/api/v1/user/withdrawal-request-verify`,
+                { requestId, code },
+                getConfig()
+            );
+            return response.data;
+        } catch (error: any) {
+            console.error("Error while verifying withdrawal request:", error);
+            if (error.response && error.response.data && error.response.data.error) {
+                return rejectWithValue(error.response.data.error);
+            }
+            return rejectWithValue("Failed to verify withdrawal request. Please try again.");
+        }
+    }
+);
+
 const walletSlice = createSlice({
     name: 'wallet',
     initialState,
@@ -134,6 +204,8 @@ const walletSlice = createSlice({
             state.wallet = null;
             state.loading = false;
             state.error = null;
+            state.success = false;
+            state.withdrawalRequests = [];
         },
     },
     extraReducers: (builder) => {
@@ -157,13 +229,17 @@ const walletSlice = createSlice({
             .addCase(withdrawalRequest.pending, (state) => {
                 state.loading = true;
                 state.error = null;
+                state.success = false;
             })
-            .addCase(withdrawalRequest.fulfilled, (state, action: PayloadAction<WithDrawalResponse>) => {
+            .addCase(withdrawalRequest.fulfilled, (state, action) => {
                 state.loading = false;
+                state.success = true;
+                state.error = null;
             })
             .addCase(withdrawalRequest.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.error.message ?? "Failed to make withdrawal.";
+                state.success = false;
+                state.error = action.payload as string;
             })
             .addCase(addFundToWallet.pending, (state) => {
                 state.loading = true;
@@ -174,8 +250,39 @@ const walletSlice = createSlice({
             })
             .addCase(addFundToWallet.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.error.message ?? "Failed to add balace into user wallet.";
-            });
+                state.error = action.error.message ?? "Failed to add balance into user wallet.";
+            })
+            .addCase(fetchWithdrawalRequest.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+                state.success = false;
+            })
+            .addCase(fetchWithdrawalRequest.fulfilled, (state, action: PayloadAction<WithDrawalRequestResponse>) => {
+                state.loading = false;
+                state.success = true;
+                state.withdrawalRequests = action.payload.withdrawalRequests;
+                state.error = null;
+            })
+            .addCase(fetchWithdrawalRequest.rejected, (state, action) => {
+                state.loading = false;
+                state.success = false;
+                state.error = action.payload as string;
+            })
+            .addCase(verifyWithdrawalRequest.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+                state.success = false;
+            })
+            .addCase(verifyWithdrawalRequest.fulfilled, (state, action) => {
+                state.loading = false;
+                state.success = true;
+                state.error = null;
+            })
+            .addCase(verifyWithdrawalRequest.rejected, (state, action) => {
+                state.loading = false;
+                state.success = false;
+                state.error = action.payload as string;
+            });;
     }
 });
 

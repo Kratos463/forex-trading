@@ -10,6 +10,7 @@ const User = require("../models/user.model");
 const Investment = require("../models/investement.model");
 const Wallet = require("../models/wallet.model");
 const Transaction = require("../models/transaction.model");
+const USDTWithdrawalTransaction = require("../models/usdtWithdrawalTransaction");
 
 
 const registerAdmin = async (req, res) => {
@@ -290,7 +291,7 @@ const getAllUser = async (req, res) => {
         // Convert to integers
         const pageNum = parseInt(page);
         const limitNum = parseInt(limit);
-        
+
         const users = await User.aggregate([
             {
                 $lookup: {
@@ -314,9 +315,11 @@ const getAllUser = async (req, res) => {
                     email: 1,
                     phone: 1,
                     isEmailVerified: 1,
+                    ismarketingId: 1,
+                    isDisabled: 1,
                     createdAt: 1,
                     'wallet.balance': 1,
-                    'wallet.totalInvestment': 1 
+                    'wallet.totalInvestment': 1
                 }
             },
             {
@@ -349,6 +352,43 @@ const getAllUser = async (req, res) => {
     }
 }
 
+const updateUserDetails = async (req, res) => {
+    const { username, firstName, lastName, email, phone, ismarketingId } = req.body;
+
+    try {
+        const currentUser = await User.findOne({ $or: [{ username: username }, { email: email }] });
+
+        if (!currentUser) {
+            return res.status(404).json({ error: 'User not found', success: false });
+        }
+
+        const emailChanged = currentUser.email !== email;
+
+        // Prepare the update object
+        const updateFields = {
+            username,
+            firstName,
+            lastName,
+            email,
+            phone,
+            ismarketingId: ismarketingId !== undefined ? ismarketingId : currentUser.ismarketingId
+        };
+
+        if (emailChanged) {
+            updateFields.emailVerified = false;
+        }
+
+        Object.assign(currentUser, updateFields);
+
+        // Save the updated user
+        await currentUser.save();
+
+        return res.status(200).json({ message: 'User details updated successfully', success: true });
+    } catch (error) {
+        console.error('Error while updating user details:', error);
+        return res.status(500).json({ error: 'Internal server error', success: false });
+    }
+};
 
 const getAllWithdrawalReq = async (req, res) => {
     try {
@@ -555,15 +595,16 @@ const addAmountInUserWallet = async (req, res) => {
 
         await wallet.save();
 
-        const transaction = new Transaction({
-            user: user._id,
-            amount: amount,
-            type: "deposit",
-            details: `${amount} USDT has been added to wallet`,
-            wallet: wallet._id,
+        const newUSDTTransaction = new USDTWithdrawalTransaction({
+            user: wallet.user,
+            gasHash: "Direct Deposit",
+            transactionHash: "Direct Deposit",
+            userWalletAddress: wallet.walletAddress,
+            mainWalletAddress: "Direct Deposit",
+            amount: amount
         })
 
-        await transaction.save()
+        await newUSDTTransaction.save()
 
         return res.status(200).json({ message: `${amount} USDT has been successfully added to your wallet`, success: true });
     } catch (error) {
@@ -588,5 +629,6 @@ module.exports = {
     getAllInvestments,
     getAllWithdrawalReq,
     addAmountInUserWallet,
-    fetchAdmin
+    fetchAdmin,
+    updateUserDetails
 }

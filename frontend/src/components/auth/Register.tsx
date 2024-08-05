@@ -57,7 +57,6 @@ const Register = () => {
     const validateForm = () => {
         const newErrors: any = {};
         if (!formData.firstName.trim()) newErrors.firstName = 'First Name is required';
-        if (!formData.referredBy.trim()) newErrors.referredBy = 'Refferal Id required';
         if (!formData.email.trim()) newErrors.email = 'Email is required';
         if (!formData.password.trim()) newErrors.password = 'Password is required';
         if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
@@ -87,17 +86,18 @@ const Register = () => {
     };
 
     return (
-        <Fragment>
+        <Fragment> 
             <div className='page-wrapper'>
                 <div className='register'>
                     <div className='form-container'>
-                        <Image src={logo} alt="Logo" width={150} height={50} />
+                        <Link href="/">
+                            <Image src={logo.src} alt="logo" width={220} height={140} />
+                        </Link>
                         <p>Create your account to access top-notch tools and resources.</p>
                         <form className='form' onSubmit={handleRegisterSubmit}>
-                            <div className={`form-group ${errors.referredBy ? 'error' : ''}`}>
+                            <div className='form-group'>
                                 <input type="text" id="referredBy" className='form-control' placeholder=" " value={formData.referredBy} onChange={handleInputChange} />
                                 <label htmlFor="referredBy">Referral ID</label>
-                                {errors.referredBy && <p className="error-message">{errors.referredBy}</p>}
                             </div>
                             <div className={`form-group ${errors.firstName ? 'error' : ''}`}>
                                 <input type="text" id="firstName" className='form-control' placeholder=" " value={formData.firstName} onChange={handleInputChange} />

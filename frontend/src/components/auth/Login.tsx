@@ -71,7 +71,9 @@ const Login = () => {
       <div className='page-wrapper'>
         <div className='authentication-box'>
           <div className='form-container'>
-            <Image src={logo} alt="Logo" width={150} height={50} />
+          <Link href="/">
+            <Image src={logo.src} alt="logo" width={220} height={140} />
+          </Link>
             <p>Please sign-in to your account and start the adventure.</p>
             <form className='form' style={{ flexDirection: "column" }} onSubmit={handleLoginSubmit}>
               <div className={`form-group ${errors.identifier ? 'error' : ''}`}>
@@ -90,7 +92,7 @@ const Login = () => {
               </div>
             </form>
             <hr className="divider" />
-            <p style={{ textAlign: "center" }}>New on our platform? <Link href="/auth/register">Sign up now</Link></p>
+            <p style={{ textAlign: "center" }}>New on our platform? <Link href="/auth/register">Signup now</Link></p>
           </div>
         </div>
       </div>

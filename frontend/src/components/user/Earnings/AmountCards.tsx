@@ -1,9 +1,11 @@
 import React from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faWallet, faPiggyBank, faUser, faUserFriends, faUsers, faDollarSign } from '@fortawesome/free-solid-svg-icons';
 
 interface CardProps {
   title: string;
   value: string;
-  cardType: 'transparent' | 'colored';
+  icon: any;
 }
 
 interface AmountCardsProps {
@@ -37,15 +39,18 @@ export const ROICard: React.FC<WalletProps> = ({ wallet }) => {
   const roiData = [
     {
       title: "Total Self ROI",
-      value: `${wallet?.selfRoi} USDT`
+      value: wallet?.selfRoi,
+      icon: faUser
     },
     {
       title: "Total Team ROI",
-      value: `${wallet?.teamRoi} USDT`,
+      value: wallet?.teamRoi,
+      icon: faUsers,
     },
     {
       title: "Total Direct Referral",
-      value: `${wallet?.directReferral} USDT`
+      value: wallet?.directReferral,
+      icon: faUserFriends,
     },
   ];
 
@@ -53,39 +58,41 @@ export const ROICard: React.FC<WalletProps> = ({ wallet }) => {
     <div className='cardContainer'>
       {roiData.map((roi, index) => (
         <React.Fragment key={index}>
-          <Card title={roi.title} value={roi.value} cardType="colored" />
-          {index < roiData.length - 1 ? <span> + </span> : <span> = </span>}
+          <Card title={roi.title} value={`${roi?.value?.toFixed(2)} USDT`} icon={roi.icon} />
+          {index < roiData.length - 1 ? <span style={{color: "white"}}> + </span> : <span style={{color: "white"}}> = </span>}
         </React.Fragment>
       ))}
-      <Card title="Total Earning" value={`${totalEarning.toFixed(2)} USDT`} cardType="colored" />
+      <Card title="Total Earning" value={`${totalEarning.toFixed(2)} USDT`} icon={faDollarSign} />
     </div>
   );
+
+  
 };
 
 export const MainCard: React.FC<WalletProps> = ({ wallet }) => {
   const mainCardData = [
-    { title: 'Main Wallet Balance', value: `${wallet?.balance} USDT` },
-    { title: 'Total Invested Amount', value: `${wallet?.totalInvestment} USDT` },
+    { title: 'Main Wallet Balance', value: `${(wallet?.balance)?.toFixed(2)} USDT`, icon: faWallet },
+    { title: 'Total Invested Amount', value: `${(wallet?.totalInvestment)?.toFixed(2)} USDT`, icon: faPiggyBank },
   ];
 
   return (
     <div className='cardContainer'>
       {mainCardData.map((data, index) => (
-        <Card key={index} title={data.title} value={data.value} cardType="colored" />
+        <Card key={index} title={data.title} value={data.value} icon={data.icon} />
       ))}
     </div>
   );
 };
 
-const Card: React.FC<CardProps> = ({ title, value, cardType }) => {
-  const cardClass = cardType === 'transparent' ? 'transparentCard' : 'coloredCard';
+const Card: React.FC<CardProps> = ({ title, value, icon }) => {
   return (
-    <>
-      <div className={cardClass}>
-        <h6>{title}</h6>
-        <p>{value}</p>
+    <div className="card">
+      <div className="icon">
+        <FontAwesomeIcon icon={icon} size="2x" />
       </div>
-    </>
+      <p>{value}</p>
+      <h6>{title}</h6>
+    </div>
   );
 };
 

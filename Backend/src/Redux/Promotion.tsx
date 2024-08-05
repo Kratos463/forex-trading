@@ -9,7 +9,7 @@ interface Pagination {
     totalPromotions: number;
 }
 
-// Define types for promotion
+// Define types for promotion 
 interface Promotion {
     name: string;
     title: string;

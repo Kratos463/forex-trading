@@ -6,7 +6,8 @@ const withdrawalRequestSchema = new Schema({
   amount: { type: Number, required: true },
   requestDate: { type: Date, default: Date.now },
   walletAddress: { type: String, required: true },
-  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+  status: { type: String, enum: ['pending', 'processing', 'completed', 'rejected'], default: 'pending' },
+  code: { type: Number, default: null },
   approvalDate: { type: Date, default: null },
   processedDate: { type: Date, default: null },
 }, { timestamps: true });
